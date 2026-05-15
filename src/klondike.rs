@@ -1,5 +1,5 @@
 use crate::Rng;
-use crate::card_game::{Card, Game, Pile, Stack};
+use crate::card_game::{Game, Pile, Stack};
 
 pub struct KlondikeConfig {}
 impl Default for KlondikeConfig {
@@ -7,6 +7,7 @@ impl Default for KlondikeConfig {
 		KlondikeConfig {}
 	}
 }
+
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum KlondikePileId {
 	Stock,
@@ -43,6 +44,7 @@ impl KlondikePileId {
 		})
 	}
 }
+
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct KlondikeInstruction {
 	pub src: KlondikePileId,
@@ -134,6 +136,27 @@ impl KlondikeState {
 	}
 }
 
+pub struct KlondikeIter {
+	instruction: Option<KlondikeInstruction>,
+}
+impl KlondikeIter {
+	fn new() -> Self {
+		Self {
+			instruction: Some(KlondikeInstruction {
+				src: KlondikePileId::Stock,
+				dst: KlondikePileId::Stock,
+			}),
+		}
+	}
+}
+impl Iterator for KlondikeIter {
+	type Item = KlondikeInstruction;
+	fn next(&mut self) -> Option<Self::Item> {
+		self.instruction = self.instruction?.next();
+		self.instruction
+	}
+}
+
 pub struct Klondike {
 	config: KlondikeConfig,
 	state: KlondikeState,
@@ -185,26 +208,7 @@ impl Klondike {
 		self.state.pile_mut(index)
 	}
 }
-pub struct KlondikeIter {
-	instruction: Option<KlondikeInstruction>,
-}
-impl KlondikeIter {
-	fn new() -> Self {
-		Self {
-			instruction: Some(KlondikeInstruction {
-				src: KlondikePileId::Stock,
-				dst: KlondikePileId::Stock,
-			}),
-		}
-	}
-}
-impl Iterator for KlondikeIter {
-	type Item = KlondikeInstruction;
-	fn next(&mut self) -> Option<Self::Item> {
-		self.instruction = self.instruction?.next();
-		self.instruction
-	}
-}
+
 impl Game for Klondike {
 	type Instruction = KlondikeInstruction;
 	fn possible_instructions(&self) -> impl Iterator<Item = Self::Instruction> + use<> {
