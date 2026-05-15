@@ -1,5 +1,5 @@
 use crate::Rng;
-use crate::card_game::{Game, Pile, Stack};
+use crate::card_game::{CardValue, Game, Pile, Stack};
 
 #[derive(Clone, Debug)]
 pub struct KlondikeConfig {}
@@ -106,14 +106,18 @@ impl KlondikeState {
 				) =>
 			{
 				// get the top cards
-				if let Some(src_card) = self.pile(src).face_up().last()
-					&& let Some(dst_card) = self.pile(dst).face_up().last()
-					// suit matches?
-					&& src_card.suit() == dst_card.suit()
-					// value is +1?
-					&& dst_card.value().checked_add(1) == Some(src_card.value())
-				{
-					true
+				if let Some(src_card) = self.pile(src).face_up().last() {
+					match self.pile(dst).face_up().last() {
+						// destination card exists
+						Some(dst_card) => {
+							// suit matches?
+							src_card.suit() == dst_card.suit()
+							// value is +1?
+							&& dst_card.value().checked_add(1) == Some(src_card.value())
+						}
+						// only ace is allowed to go onto empty foundation
+						None => src_card.value() == CardValue::ACE,
+					}
 				} else {
 					false
 				}

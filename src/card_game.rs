@@ -29,6 +29,19 @@ impl Suit {
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct CardValue(u8);
 impl CardValue {
+	pub const ACE: Self = CardValue(1);
+	pub const TWO: Self = CardValue(2);
+	pub const THREE: Self = CardValue(3);
+	pub const FOUR: Self = CardValue(4);
+	pub const FIVE: Self = CardValue(5);
+	pub const SIX: Self = CardValue(6);
+	pub const SEVEN: Self = CardValue(7);
+	pub const EIGHT: Self = CardValue(8);
+	pub const NINE: Self = CardValue(9);
+	pub const TEN: Self = CardValue(10);
+	pub const JACK: Self = CardValue(11);
+	pub const QUEEN: Self = CardValue(12);
+	pub const KING: Self = CardValue(13);
 	pub fn checked_add(self, offset: u8) -> Option<CardValue> {
 		let new_value = self.0.checked_add(offset)?;
 		if 13 < new_value {
