@@ -101,14 +101,16 @@ impl Card {
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct Stack(Vec<Card>);
-impl Stack {
+pub struct Stack<const CAP: usize>(arrayvec::ArrayVec<Card, CAP>);
+impl<const CAP: usize> Stack<CAP> {
 	pub fn new() -> Self {
-		Self(Vec::new())
+		Self(arrayvec::ArrayVec::new())
 	}
+}
+impl Stack<52> {
 	/// Generate a full deck of cards with the specified deck id.
-	pub fn full_deck(deck: u8) -> Stack {
-		let mut stack = Vec::with_capacity(52);
+	pub fn full_deck(deck: u8) -> Self {
+		let mut stack = arrayvec::ArrayVec::new();
 		for suit in Suit::SUITS {
 			for value in 1..=13 {
 				stack.push(Card::new(deck, suit, CardValue(value)));
@@ -117,36 +119,43 @@ impl Stack {
 		Stack(stack)
 	}
 }
-impl From<Vec<Card>> for Stack {
-	fn from(value: Vec<Card>) -> Self {
+impl<const CAP: usize> From<arrayvec::ArrayVec<Card, CAP>> for Stack<CAP> {
+	fn from(value: arrayvec::ArrayVec<Card, CAP>) -> Self {
 		Self(value)
 	}
 }
-impl std::ops::Deref for Stack {
-	type Target = Vec<Card>;
+impl<const CAP: usize> std::ops::Deref for Stack<CAP> {
+	type Target = arrayvec::ArrayVec<Card, CAP>;
 	fn deref(&self) -> &Self::Target {
 		&self.0
 	}
 }
-impl std::ops::DerefMut for Stack {
+impl<const CAP: usize> std::ops::DerefMut for Stack<CAP> {
 	fn deref_mut(&mut self) -> &mut Self::Target {
 		&mut self.0
 	}
 }
+impl<const CAP: usize> IntoIterator for Stack<CAP> {
+	type Item = Card;
+	type IntoIter = arrayvec::IntoIter<Card, CAP>;
+	fn into_iter(self) -> Self::IntoIter {
+		self.0.into_iter()
+	}
+}
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct Pile {
-	face_down: Stack,
-	face_up: Stack,
+pub struct Pile<const CAP: usize> {
+	face_down: Stack<CAP>,
+	face_up: Stack<CAP>,
 }
-impl Pile {
+impl<const CAP: usize> Pile<CAP> {
 	pub fn new() -> Self {
 		Self {
 			face_down: Stack::new(),
 			face_up: Stack::new(),
 		}
 	}
-	pub fn new_face_down(stack: Stack) -> Self {
+	pub fn new_face_down(stack: Stack<CAP>) -> Self {
 		Self {
 			face_down: stack,
 			face_up: Stack::new(),

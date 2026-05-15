@@ -75,13 +75,13 @@ impl KlondikeInstruction {
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 struct KlondikeState {
-	piles: [Pile; 13],
+	piles: [Pile<13>; 13],
 }
 impl KlondikeState {
-	fn pile(&self, index: KlondikePileId) -> &Pile {
+	fn pile(&self, index: KlondikePileId) -> &Pile<13> {
 		&self.piles[index as usize]
 	}
-	fn pile_mut(&mut self, index: KlondikePileId) -> &mut Pile {
+	fn pile_mut(&mut self, index: KlondikePileId) -> &mut Pile<13> {
 		&mut self.piles[index as usize]
 	}
 	fn is_instruction_valid(&self, instruction: KlondikeInstruction) -> bool {
@@ -187,18 +187,18 @@ impl Klondike {
 		let mut deck = Stack::full_deck(0);
 		use rand::seq::SliceRandom;
 		deck.shuffle(&mut seed);
+		let mut deck = deck.into_iter();
 
 		// generate tableaus
 		let [t0, t1, t2, t3, t4, t5, t6, t7] = core::array::from_fn(|i| {
-			let remaining = deck.split_off(i).into();
-			let stack = core::mem::replace(&mut deck, remaining);
+			let stack = arrayvec::ArrayVec::from_iter((&mut deck).take(i)).into();
 			let mut pile = Pile::new_face_down(stack);
-			pile.push(deck.pop().unwrap());
+			pile.push(deck.next().unwrap());
 			pile
 		});
 
 		// stock is remaining cards
-		let stock = Pile::new_face_down(deck);
+		let stock = Pile::new_face_down(arrayvec::ArrayVec::from_iter(deck).into());
 
 		let state = KlondikeState {
 			piles: [
@@ -220,11 +220,11 @@ impl Klondike {
 		Self { config, state }
 	}
 	#[inline]
-	pub fn pile(&self, index: KlondikePileId) -> &Pile {
+	pub fn pile(&self, index: KlondikePileId) -> &Pile<13> {
 		self.state.pile(index)
 	}
 	#[inline]
-	fn pile_mut(&mut self, index: KlondikePileId) -> &mut Pile {
+	fn pile_mut(&mut self, index: KlondikePileId) -> &mut Pile<13> {
 		self.state.pile_mut(index)
 	}
 }
