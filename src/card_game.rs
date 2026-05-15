@@ -163,7 +163,7 @@ impl<const CAP: usize> Pile<CAP> {
 	}
 	pub fn flip_it_and_reverse_it(&mut self) {
 		self.swap_up_down();
-		self.face_up.reverse();
+		self.face_down.reverse();
 	}
 	pub fn swap_up_down(&mut self) {
 		core::mem::swap(&mut self.face_up, &mut self.face_down);
