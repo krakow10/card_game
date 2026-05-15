@@ -52,6 +52,12 @@ pub struct KlondikeInstruction {
 	pub dst: KlondikePileId,
 }
 impl KlondikeInstruction {
+	pub fn stock() -> Self {
+		Self {
+			src: KlondikePileId::Stock,
+			dst: KlondikePileId::Stock,
+		}
+	}
 	fn next(self) -> Option<Self> {
 		let KlondikeInstruction { src, dst } = self;
 		if let Some(next_dst) = dst.next() {

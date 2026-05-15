@@ -122,6 +122,7 @@ enum SessionInstruction {
 	New,
 	Undo,
 	Hint,
+	Stock,
 	Klondike(KlondikeInstruction),
 }
 impl core::str::FromStr for SessionInstruction {
@@ -131,6 +132,7 @@ impl core::str::FromStr for SessionInstruction {
 			"NEW" | "new" => Self::New,
 			"UNDO" | "undo" => Self::Undo,
 			"HINT" | "hint" => Self::Hint,
+			"s" => Self::Stock,
 			other => {
 				let Parsed(ki) = other.parse()?;
 				Self::Klondike(ki)
@@ -162,6 +164,7 @@ fn main() -> Result<(), std::io::Error> {
 					println!("{instruction:?}");
 				}
 			}
+			SessionInstruction::Stock => session.process_instruction(KlondikeInstruction::stock()),
 			SessionInstruction::Klondike(instruction) => {
 				if session.is_instruction_valid(instruction) {
 					session.process_instruction(instruction);
