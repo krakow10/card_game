@@ -120,6 +120,7 @@ enum SessionInstruction {
 	New,
 	Undo,
 	Hint,
+	Auto,
 	Stock,
 	Klondike(KlondikeInstruction),
 }
@@ -127,9 +128,10 @@ impl core::str::FromStr for SessionInstruction {
 	type Err = Invalid;
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
 		Ok(match s {
-			"NEW" | "new" => Self::New,
-			"UNDO" | "undo" => Self::Undo,
-			"HINT" | "hint" => Self::Hint,
+			"NEW" | "new" | "n" => Self::New,
+			"UNDO" | "undo" | "u" => Self::Undo,
+			"HINT" | "hint" | "h" => Self::Hint,
+			"AUTO" | "auto" | "a" => Self::Auto,
 			"s" => Self::Stock,
 			other => {
 				let Parsed(ki) = other.parse()?;
@@ -160,6 +162,13 @@ fn main() -> Result<(), std::io::Error> {
 			SessionInstruction::Hint => {
 				for instruction in session.possible_instructions() {
 					println!("{instruction:?}");
+				}
+			}
+			SessionInstruction::Auto => {
+				if let Some(instruction) = session.possible_instructions().next() {
+					session.process_instruction(instruction);
+				} else {
+					println!("No valid moves!");
 				}
 			}
 			SessionInstruction::Stock => session.process_instruction(KlondikeInstruction::stock()),
