@@ -75,7 +75,7 @@ impl KlondikeState {
 	fn pile_mut(&mut self, index: KlondikePileId) -> &mut Pile {
 		&mut self.piles[index as usize]
 	}
-	fn validate_instruction(&self, instruction: KlondikeInstruction) -> bool {
+	fn is_instruction_valid(&self, instruction: KlondikeInstruction) -> bool {
 		match instruction {
 			// Stock -> Stock draws a card or resets the stock
 			KlondikeInstruction {
@@ -208,10 +208,10 @@ impl Game for Klondike {
 	type Instruction = KlondikeInstruction;
 	fn possible_instructions(&self) -> impl Iterator<Item = Self::Instruction> + use<> {
 		let state = self.state.clone();
-		KlondikeIter::new().filter(move |&instruction| state.validate_instruction(instruction))
+		KlondikeIter::new().filter(move |&instruction| state.is_instruction_valid(instruction))
 	}
-	fn validate_instruction(&self, instruction: Self::Instruction) -> bool {
-		self.state.validate_instruction(instruction)
+	fn is_instruction_valid(&self, instruction: Self::Instruction) -> bool {
+		self.state.is_instruction_valid(instruction)
 	}
 	fn process_instruction(&mut self, instruction: Self::Instruction) {
 		let card = self.pile_mut(instruction.src).pop().unwrap();
