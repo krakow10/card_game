@@ -86,7 +86,61 @@ impl Game for Klondike {
 		vec![].into_iter()
 	}
 	fn validate_instruction(&self, instruction: Self::Instruction) -> bool {
-		todo!()
+		match instruction {
+			// Stock -> Stock draws a card or resets the stock
+			KlondikeInstruction {
+				src: KlondikePileId::Stock,
+				dst: KlondikePileId::Stock,
+			} => {
+				// cannot move stock when stock is empty
+				!self.pile(KlondikePileId::Stock).is_empty()
+			}
+
+			// cannot move cards to stock
+			KlondikeInstruction {
+				src: _,
+				dst: KlondikePileId::Stock,
+			} => false,
+
+			// moving to foundation has special rules
+			KlondikeInstruction { src, dst }
+				if matches!(
+					dst,
+					KlondikePileId::Foundation0
+						| KlondikePileId::Foundation1
+						| KlondikePileId::Foundation2
+						| KlondikePileId::Foundation3
+				) =>
+			{
+				// get the top cards
+				if let Some(src_card) = self.pile(src).face_up().last()
+					&& let Some(dst_card) = self.pile(dst).face_up().last()
+					// suit matches?
+					&& src_card.suit() == dst_card.suit()
+					// value is +1?
+					&& dst_card.value().checked_add(1) == Some(src_card.value())
+				{
+					true
+				} else {
+					false
+				}
+			}
+			// other = move to tableau
+			KlondikeInstruction { src, dst } => {
+				// get the top cards
+				if let Some(src_card) = self.pile(src).face_up().last()
+					&& let Some(dst_card) = self.pile(dst).face_up().last()
+					// red-ness is opposite?
+					&& src_card.is_red() != dst_card.is_red()
+					// value is -1?
+					&& dst_card.value().checked_sub(1) == Some(src_card.value())
+				{
+					true
+				} else {
+					false
+				}
+			}
+		}
 	}
 	fn process_instruction(&mut self, instruction: Self::Instruction) {
 		let card = self.pile_mut(instruction.src).pop().unwrap();

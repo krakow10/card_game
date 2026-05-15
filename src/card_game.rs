@@ -27,7 +27,27 @@ impl Suit {
 		self as u8 & 0b10 != 0
 	}
 }
+
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct CardValue(u8);
+impl CardValue {
+	pub fn checked_add(self, offset: u8) -> Option<CardValue> {
+		let new_value = self.0.checked_add(offset)?;
+		if 13 < new_value {
+			None
+		} else {
+			Some(CardValue(new_value))
+		}
+	}
+	pub fn checked_sub(self, offset: u8) -> Option<CardValue> {
+		let new_value = self.0.checked_sub(offset)?;
+		if new_value < 1 {
+			None
+		} else {
+			Some(CardValue(new_value))
+		}
+	}
+}
 /// An identifier which specifies the deck id, suit, and card value.
 /// 2 bits for deck ID
 /// 2 bits for suit ID
