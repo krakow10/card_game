@@ -3,7 +3,7 @@ use crate::Rng;
 // TODO: pub struct ValidInstruction<I>(I);
 pub trait Game {
 	type Instruction;
-	fn possible_instructions(&self) -> impl Iterator<Item = Self::Instruction>;
+	fn possible_instructions(&self) -> impl Iterator<Item = Self::Instruction> + use<Self>;
 	fn validate_instruction(&self, instruction: Self::Instruction) -> bool;
 	fn process_instruction(&mut self, instruction: Self::Instruction);
 	fn is_win(&self) -> bool;
@@ -189,7 +189,7 @@ where
 	G::Instruction: Clone,
 {
 	type Instruction = G::Instruction;
-	fn possible_instructions(&self) -> impl Iterator<Item = Self::Instruction> {
+	fn possible_instructions(&self) -> impl Iterator<Item = Self::Instruction> + use<G> {
 		self.state.possible_instructions()
 	}
 	fn validate_instruction(&self, instruction: Self::Instruction) -> bool {

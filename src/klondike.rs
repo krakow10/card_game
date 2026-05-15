@@ -82,7 +82,7 @@ impl Klondike {
 }
 impl Game for Klondike {
 	type Instruction = KlondikeInstruction;
-	fn possible_instructions(&self) -> impl Iterator<Item = Self::Instruction> {
+	fn possible_instructions(&self) -> impl Iterator<Item = Self::Instruction> + use<> {
 		vec![].into_iter()
 	}
 	fn validate_instruction(&self, instruction: Self::Instruction) -> bool {
