@@ -8,7 +8,8 @@ fn test_klondike() {
 	let mut session = Session::new(game);
 
 	// is winnable
-	let is_winnable = session.is_winnable().is_some();
+	let is_winnable = session.is_winnable();
+	println!("is_winnable = {is_winnable:?}");
 
 	// play game
 	while let Some(instruction) = session.possible_instructions().next() {
@@ -23,6 +24,5 @@ fn test_klondike() {
 		println!("move {i} = {instruction:?}");
 	}
 
-	println!("is_winnable = {is_winnable}");
 	println!("is_win = {is_win}");
 }

@@ -97,7 +97,7 @@ impl Card {
 	}
 }
 
-#[derive(Clone, Debug, Hash)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Stack(Vec<Card>);
 impl Stack {
 	pub fn new() -> Self {
@@ -131,7 +131,7 @@ impl std::ops::DerefMut for Stack {
 	}
 }
 
-#[derive(Clone, Debug, Hash)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Pile {
 	face_down: Stack,
 	face_up: Stack,
@@ -175,14 +175,15 @@ impl Pile {
 	}
 }
 
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Session<G: Game> {
 	seed: G,
 	state: G,
 	history: Vec<G::Instruction>,
 }
-impl<G: Game + Clone> Session<G>
+impl<G: Game + Clone + Eq + core::hash::Hash> Session<G>
 where
-	G::Instruction: Clone,
+	G::Instruction: Clone + Eq + core::hash::Hash,
 {
 	pub fn new(state: G) -> Self {
 		Self {
@@ -195,7 +196,21 @@ where
 		&self.history
 	}
 	pub fn is_winnable(&self) -> Option<Vec<G::Instruction>> {
-		None
+		let mut observed_states = std::collections::HashSet::new();
+		let mut state = self.clone();
+		'outer: while !state.is_win() {
+			observed_states.insert(state.clone());
+			for instruction in state.possible_instructions() {
+				let mut next_state = state.clone();
+				next_state.process_instruction(instruction);
+				if !observed_states.contains(&next_state) {
+					state = next_state;
+					continue 'outer;
+				}
+			}
+			return None;
+		}
+		Some(state.history)
 	}
 	pub fn undo(&mut self) {
 		// replay the entire history of the game except one move
