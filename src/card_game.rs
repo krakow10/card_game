@@ -66,6 +66,7 @@ impl Card {
 	}
 }
 
+#[derive(Hash)]
 pub struct Stack(Vec<Card>);
 impl Stack {
 	pub fn new() -> Self {
@@ -99,6 +100,7 @@ impl std::ops::DerefMut for Stack {
 	}
 }
 
+#[derive(Hash)]
 pub struct Pile {
 	face_down: Stack,
 	face_up: Stack,
@@ -133,6 +135,12 @@ impl Pile {
 	}
 	pub fn push(&mut self, card: Card) {
 		self.face_up.push(card);
+	}
+	pub fn face_up(&self) -> &[Card] {
+		&self.face_up
+	}
+	pub fn face_down(&self) -> &[Card] {
+		&self.face_down
 	}
 }
 

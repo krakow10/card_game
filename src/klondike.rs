@@ -7,9 +7,11 @@ impl Default for KlondikeConfig {
 		KlondikeConfig {}
 	}
 }
+#[derive(Hash)]
 struct KlondikeState {
 	piles: [Pile; 13],
 }
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum KlondikePileId {
 	Tableau0,
 	Tableau1,
@@ -25,18 +27,7 @@ pub enum KlondikePileId {
 	Foundation2,
 	Foundation3,
 }
-impl std::ops::Index<KlondikePileId> for KlondikeState {
-	type Output = Pile;
-	fn index(&self, index: KlondikePileId) -> &Self::Output {
-		&self.piles[index as usize]
-	}
-}
-impl std::ops::IndexMut<KlondikePileId> for KlondikeState {
-	fn index_mut(&mut self, index: KlondikePileId) -> &mut Self::Output {
-		&mut self.piles[index as usize]
-	}
-}
-
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct KlondikeInstruction {
 	pub src: KlondikePileId,
 	pub dst: KlondikePileId,
@@ -82,6 +73,12 @@ impl Klondike {
 		};
 		Self { config, state }
 	}
+	pub fn pile(&self, index: KlondikePileId) -> &Pile {
+		&self.state.piles[index as usize]
+	}
+	fn pile_mut(&mut self, index: KlondikePileId) -> &mut Pile {
+		&mut self.state.piles[index as usize]
+	}
 }
 impl Game for Klondike {
 	type Instruction = KlondikeInstruction;
@@ -92,8 +89,8 @@ impl Game for Klondike {
 		todo!()
 	}
 	fn process_instruction(&mut self, instruction: Self::Instruction) {
-		let card = self.state[instruction.src].pop().unwrap();
-		self.state[instruction.dst].push(card);
+		let card = self.pile_mut(instruction.src).pop().unwrap();
+		self.pile_mut(instruction.dst).push(card);
 	}
 	fn is_win(&self) -> bool {
 		// assuming only valid moves, tableau empty and stock empty means win
