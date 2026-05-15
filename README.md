@@ -11,8 +11,7 @@ use card_game::card_game::{Session, Game};
 use card_game::klondike::Klondike;
 
 // create game session
-let seed = Rng::default();
-let game = Klondike::new(seed.clone(), Default::default());
+let game = Klondike::new_random_default();
 let mut session = Session::new(game);
 
 // is winnable

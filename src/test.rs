@@ -1,11 +1,10 @@
 #[test]
 fn test_klondike() {
-	use crate::Rng;
 	use crate::card_game::{Game, Session};
 	use crate::klondike::Klondike;
 
 	// create game session
-	let game = Klondike::new(Rng::default(), Default::default());
+	let game = Klondike::new_random_default();
 	let mut session = Session::new(game);
 
 	// is winnable

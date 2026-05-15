@@ -1,5 +1,3 @@
-use crate::Rng;
-
 // TODO: pub struct ValidInstruction<I>(I);
 pub trait Game {
 	type Instruction;

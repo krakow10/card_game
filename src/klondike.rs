@@ -164,6 +164,9 @@ pub struct Klondike {
 	state: KlondikeState,
 }
 impl Klondike {
+	pub fn new_random_default() -> Self {
+		Self::new(Rng::default(), KlondikeConfig::default())
+	}
 	pub fn new(mut seed: Rng, config: KlondikeConfig) -> Self {
 		// shuffle a new deck
 		let mut deck = Stack::full_deck(0);
