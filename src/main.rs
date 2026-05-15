@@ -70,7 +70,7 @@ impl Display for Klondike {
 		.into_iter()
 		.enumerate()
 		{
-			write!(f, "T{i} ")?;
+			write!(f, "T{} ", i + 1)?;
 			let pile = self.pile(tableau);
 			for _ in pile.face_down() {
 				write!(f, "]")?;
