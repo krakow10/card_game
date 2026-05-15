@@ -18,7 +18,6 @@ pub enum KlondikePileId {
 	Tableau5,
 	Tableau6,
 	Tableau7,
-	Tableau8,
 	Foundation1,
 	Foundation2,
 	Foundation3,
@@ -35,8 +34,7 @@ impl KlondikePileId {
 			Tableau4 => Tableau5,
 			Tableau5 => Tableau6,
 			Tableau6 => Tableau7,
-			Tableau7 => Tableau8,
-			Tableau8 => Foundation1,
+			Tableau7 => Foundation1,
 			Foundation1 => Foundation2,
 			Foundation2 => Foundation3,
 			Foundation3 => Foundation4,
@@ -75,7 +73,7 @@ impl KlondikeInstruction {
 
 const STOCKS: usize = 1;
 const FOUNDATIONS: usize = 4;
-const TABLEAUS: usize = 8;
+const TABLEAUS: usize = 7;
 const fn sum(n: usize) -> usize {
 	n * (n + 1) / 2
 }
@@ -198,7 +196,7 @@ impl Klondike {
 		let mut deck = deck.into_iter();
 
 		// generate tableaus
-		let [t0, t1, t2, t3, t4, t5, t6, t7] = core::array::from_fn(|i| {
+		let [t0, t1, t2, t3, t4, t5, t6] = core::array::from_fn(|i| {
 			let stack = arrayvec::ArrayVec::from_iter((&mut deck).take(i)).into();
 			let mut pile = Pile::new_face_down(stack);
 			pile.push(deck.next().unwrap());
@@ -217,7 +215,6 @@ impl Klondike {
 				t4,
 				t5,
 				t6,
-				t7,
 				Pile::new(),
 				Pile::new(),
 				Pile::new(),

@@ -65,7 +65,6 @@ impl Display for Klondike {
 			KlondikePileId::Tableau5,
 			KlondikePileId::Tableau6,
 			KlondikePileId::Tableau7,
-			KlondikePileId::Tableau8,
 		]
 		.into_iter()
 		.enumerate()
@@ -108,7 +107,6 @@ impl core::str::FromStr for Parsed<KlondikePileId> {
 			"T5" | "t5" => KlondikePileId::Tableau5,
 			"T6" | "t6" => KlondikePileId::Tableau6,
 			"T7" | "t7" => KlondikePileId::Tableau7,
-			"T8" | "t8" => KlondikePileId::Tableau8,
 			"F1" | "f1" => KlondikePileId::Foundation1,
 			"F2" | "f2" => KlondikePileId::Foundation2,
 			"F3" | "f3" => KlondikePileId::Foundation3,
