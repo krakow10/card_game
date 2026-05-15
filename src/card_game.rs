@@ -196,21 +196,48 @@ where
 		&self.history
 	}
 	pub fn is_winnable(&self) -> Option<Vec<G::Instruction>> {
-		let mut observed_states = std::collections::HashSet::new();
-		let mut state = self.clone();
-		'outer: while !state.is_win() {
-			observed_states.insert(state.clone());
-			for instruction in state.possible_instructions() {
-				let mut next_state = state.clone();
-				next_state.process_instruction(instruction);
-				if !observed_states.contains(&next_state) {
-					state = next_state;
+		let mut observed = std::collections::HashSet::new();
+		struct StateMachine<G, P, I> {
+			state: G,
+			possible_instructions_iter: P,
+			instruction: I,
+		}
+		let state = self.state.clone();
+		let mut state = StateMachine {
+			possible_instructions_iter: state.possible_instructions(),
+			state,
+			instruction: None,
+		};
+		let mut history = Vec::new();
+		'outer: while !state.state.is_win() {
+			observed.insert(state.state.clone());
+			for instruction in &mut state.possible_instructions_iter {
+				let mut next_state = state.state.clone();
+				next_state.process_instruction(instruction.clone());
+				if !observed.contains(&next_state) {
+					let it = next_state.possible_instructions();
+					history.push(core::mem::replace(
+						&mut state,
+						StateMachine {
+							state: next_state,
+							possible_instructions_iter: it,
+							instruction: Some(instruction),
+						},
+					));
 					continue 'outer;
 				}
 			}
-			return None;
+			let Some(last_state) = history.pop() else {
+				return None;
+			};
+			state = last_state;
 		}
-		Some(state.history)
+		Some(
+			history
+				.into_iter()
+				.filter_map(|state| state.instruction)
+				.collect(),
+		)
 	}
 	pub fn undo(&mut self) {
 		// replay the entire history of the game except one move

@@ -1,8 +1,13 @@
+use crate::card_game::{Game, Session};
+use crate::klondike::Klondike;
+#[test]
+fn test_is_winnable() {
+	// is winnable
+	let is_winnable = Session::new(Klondike::new_random_default()).is_winnable();
+	println!("is_winnable = {is_winnable:?}");
+}
 #[test]
 fn test_klondike() {
-	use crate::card_game::{Game, Session};
-	use crate::klondike::Klondike;
-
 	// create game session
 	let game = Klondike::new_random_default();
 	let mut session = Session::new(game);
