@@ -3,9 +3,10 @@ use crate::Rng;
 // TODO: pub struct ValidInstruction<I>(I);
 pub trait Game {
 	type Instruction;
-	fn enumerate_instructions(&self) -> impl Iterator<Item = Self::Instruction>;
+	fn possible_instructions(&self) -> impl Iterator<Item = Self::Instruction>;
 	fn validate_instruction(&self, instruction: Self::Instruction) -> bool;
 	fn process_instruction(&mut self, instruction: Self::Instruction);
+	fn is_win(&self) -> bool;
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -118,6 +119,9 @@ impl Pile {
 	pub fn make_face_down(&mut self) {
 		self.face_down.extend(self.face_up.drain(..));
 	}
+	pub fn is_empty(&self) -> bool {
+		self.face_down.is_empty() && self.face_up.is_empty()
+	}
 	pub fn pop(&mut self) -> Option<Card> {
 		let card = self.face_up.pop()?;
 		if self.face_up.is_empty() {
@@ -148,14 +152,17 @@ impl<G: Game> Session<G> {
 	pub fn history(&self) -> &[G::Instruction] {
 		&self.history
 	}
+	pub fn is_winnable(&self) -> Option<Vec<G::Instruction>> {
+		None
+	}
 }
 impl<G: Game> Game for Session<G>
 where
 	G::Instruction: Clone,
 {
 	type Instruction = G::Instruction;
-	fn enumerate_instructions(&self) -> impl Iterator<Item = Self::Instruction> {
-		self.state.enumerate_instructions()
+	fn possible_instructions(&self) -> impl Iterator<Item = Self::Instruction> {
+		self.state.possible_instructions()
 	}
 	fn validate_instruction(&self, instruction: Self::Instruction) -> bool {
 		self.state.validate_instruction(instruction)
@@ -163,5 +170,8 @@ where
 	fn process_instruction(&mut self, instruction: Self::Instruction) {
 		self.history.push(instruction.clone());
 		self.state.process_instruction(instruction);
+	}
+	fn is_win(&self) -> bool {
+		self.state.is_win()
 	}
 }

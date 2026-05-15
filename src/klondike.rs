@@ -85,7 +85,7 @@ impl Klondike {
 }
 impl Game for Klondike {
 	type Instruction = KlondikeInstruction;
-	fn enumerate_instructions(&self) -> impl Iterator<Item = Self::Instruction> {
+	fn possible_instructions(&self) -> impl Iterator<Item = Self::Instruction> {
 		vec![].into_iter()
 	}
 	fn validate_instruction(&self, instruction: Self::Instruction) -> bool {
@@ -94,5 +94,9 @@ impl Game for Klondike {
 	fn process_instruction(&mut self, instruction: Self::Instruction) {
 		let card = self.state[instruction.src].pop().unwrap();
 		self.state[instruction.dst].push(card);
+	}
+	fn is_win(&self) -> bool {
+		// assuming only valid moves, tableau empty and stock empty means win
+		self.state.piles[0..9].iter().all(|pile| pile.is_empty())
 	}
 }
