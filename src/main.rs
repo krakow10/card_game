@@ -120,6 +120,7 @@ impl core::str::FromStr for Parsed<KlondikePileId> {
 
 enum SessionInstruction {
 	Undo,
+	Hint,
 	Klondike(KlondikeInstruction),
 }
 impl core::str::FromStr for SessionInstruction {
@@ -127,6 +128,7 @@ impl core::str::FromStr for SessionInstruction {
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
 		Ok(match s {
 			"UNDO" | "undo" => Self::Undo,
+			"HINT" | "hint" => Self::Hint,
 			other => {
 				let Parsed(ki) = other.parse()?;
 				Self::Klondike(ki)
@@ -152,6 +154,11 @@ fn main() -> Result<(), std::io::Error> {
 		// run game
 		match instruction {
 			SessionInstruction::Undo => session.undo(),
+			SessionInstruction::Hint => {
+				for instruction in session.possible_instructions() {
+					println!("{instruction:?}");
+				}
+			}
 			SessionInstruction::Klondike(instruction) => {
 				if session.is_instruction_valid(instruction) {
 					session.process_instruction(instruction);
