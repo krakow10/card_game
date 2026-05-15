@@ -157,8 +157,9 @@ impl KlondikeIter {
 impl Iterator for KlondikeIter {
 	type Item = KlondikeInstruction;
 	fn next(&mut self) -> Option<Self::Item> {
-		self.instruction = self.instruction?.next();
-		self.instruction
+		let instruction = self.instruction;
+		self.instruction = instruction?.next();
+		instruction
 	}
 }
 
