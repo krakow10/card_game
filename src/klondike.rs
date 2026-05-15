@@ -236,8 +236,9 @@ impl Game for Klondike {
 				dst: KlondikePileId::Stock,
 			} => {
 				if self.pile(KlondikePileId::Stock).face_down().is_empty() {
-					self.pile_mut(KlondikePileId::Stock).flip_it_and_reverse_it();
-				}else{
+					self.pile_mut(KlondikePileId::Stock)
+						.flip_it_and_reverse_it();
+				} else {
 					self.pile_mut(KlondikePileId::Stock).flip_up();
 				}
 			}
