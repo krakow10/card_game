@@ -11,7 +11,6 @@ impl Default for KlondikeConfig {
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum KlondikePileId {
-	Tableau0,
 	Tableau1,
 	Tableau2,
 	Tableau3,
@@ -19,28 +18,29 @@ pub enum KlondikePileId {
 	Tableau5,
 	Tableau6,
 	Tableau7,
-	Foundation0,
+	Tableau8,
 	Foundation1,
 	Foundation2,
 	Foundation3,
+	Foundation4,
 	Stock,
 }
 impl KlondikePileId {
 	fn next(self) -> Option<Self> {
 		use KlondikePileId::*;
 		Some(match self {
-			Tableau0 => Tableau1,
 			Tableau1 => Tableau2,
 			Tableau2 => Tableau3,
 			Tableau3 => Tableau4,
 			Tableau4 => Tableau5,
 			Tableau5 => Tableau6,
 			Tableau6 => Tableau7,
-			Tableau7 => Foundation0,
-			Foundation0 => Foundation1,
+			Tableau7 => Tableau8,
+			Tableau8 => Foundation1,
 			Foundation1 => Foundation2,
 			Foundation2 => Foundation3,
-			Foundation3 => Stock,
+			Foundation3 => Foundation4,
+			Foundation4 => Stock,
 			Stock => return None,
 		})
 	}
@@ -99,10 +99,10 @@ impl KlondikeState {
 			KlondikeInstruction { src, dst }
 				if matches!(
 					dst,
-					KlondikePileId::Foundation0
-						| KlondikePileId::Foundation1
+					KlondikePileId::Foundation1
 						| KlondikePileId::Foundation2
 						| KlondikePileId::Foundation3
+						| KlondikePileId::Foundation4
 				) =>
 			{
 				// get the top cards
@@ -152,8 +152,8 @@ impl KlondikeIter {
 	fn new() -> Self {
 		Self {
 			instruction: Some(KlondikeInstruction {
-				src: KlondikePileId::Tableau0,
-				dst: KlondikePileId::Tableau1,
+				src: KlondikePileId::Tableau1,
+				dst: KlondikePileId::Tableau2,
 			}),
 		}
 	}

@@ -50,15 +50,14 @@ impl Display for Klondike {
 		write!(
 			f,
 			"Foundations: {} {} {} {}",
-			OptionalCard(self.pile(KlondikePileId::Foundation0).face_up().last()),
 			OptionalCard(self.pile(KlondikePileId::Foundation1).face_up().last()),
 			OptionalCard(self.pile(KlondikePileId::Foundation2).face_up().last()),
-			OptionalCard(self.pile(KlondikePileId::Foundation3).face_up().last())
+			OptionalCard(self.pile(KlondikePileId::Foundation3).face_up().last()),
+			OptionalCard(self.pile(KlondikePileId::Foundation4).face_up().last()),
 		)?;
 		writeln!(f)?;
 
 		for (i, tableau) in [
-			KlondikePileId::Tableau0,
 			KlondikePileId::Tableau1,
 			KlondikePileId::Tableau2,
 			KlondikePileId::Tableau3,
@@ -66,6 +65,7 @@ impl Display for Klondike {
 			KlondikePileId::Tableau5,
 			KlondikePileId::Tableau6,
 			KlondikePileId::Tableau7,
+			KlondikePileId::Tableau8,
 		]
 		.into_iter()
 		.enumerate()
@@ -101,7 +101,6 @@ impl core::str::FromStr for Parsed<KlondikePileId> {
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
 		Ok(Parsed(match s {
 			"ST" | "st" => KlondikePileId::Stock,
-			"T0" | "t0" => KlondikePileId::Tableau0,
 			"T1" | "t1" => KlondikePileId::Tableau1,
 			"T2" | "t2" => KlondikePileId::Tableau2,
 			"T3" | "t3" => KlondikePileId::Tableau3,
@@ -109,10 +108,11 @@ impl core::str::FromStr for Parsed<KlondikePileId> {
 			"T5" | "t5" => KlondikePileId::Tableau5,
 			"T6" | "t6" => KlondikePileId::Tableau6,
 			"T7" | "t7" => KlondikePileId::Tableau7,
-			"F0" | "f0" => KlondikePileId::Foundation0,
+			"T8" | "t8" => KlondikePileId::Tableau8,
 			"F1" | "f1" => KlondikePileId::Foundation1,
 			"F2" | "f2" => KlondikePileId::Foundation2,
 			"F3" | "f3" => KlondikePileId::Foundation3,
+			"F4" | "f4" => KlondikePileId::Foundation4,
 			_ => return Err(Invalid),
 		}))
 	}
