@@ -19,9 +19,9 @@ impl Display for Card {
 		}?;
 		match self.suit() {
 			Suit::Spades => write!(f, "♠"),
-			Suit::Hearts => write!(f, "♥️"),
+			Suit::Hearts => write!(f, "♡"),
 			Suit::Clubs => write!(f, "♣"),
-			Suit::Diamonds => write!(f, "♦"),
+			Suit::Diamonds => write!(f, "♢"),
 		}
 	}
 }
