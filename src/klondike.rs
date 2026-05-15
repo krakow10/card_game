@@ -64,7 +64,7 @@ impl KlondikeInstruction {
 		if let Some(next_src) = src.next() {
 			return Some(Self {
 				src: next_src,
-				dst: KlondikePileId::Stock,
+				dst: KlondikePileId::Tableau1,
 			});
 		}
 		None
