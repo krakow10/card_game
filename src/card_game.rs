@@ -152,18 +152,28 @@ impl Pile {
 			face_up: Stack::new(),
 		}
 	}
+	pub fn flip_it_and_reverse_it(&mut self) {
+		self.swap_up_down();
+		self.face_up.reverse();
+	}
 	pub fn swap_up_down(&mut self) {
 		core::mem::swap(&mut self.face_up, &mut self.face_down);
+	}
+	pub fn flip_up(&mut self) {
+		if let Some(card) = self.face_down.pop() {
+			self.face_up.push(card);
+		}
 	}
 	pub fn is_empty(&self) -> bool {
 		self.face_down.is_empty() && self.face_up.is_empty()
 	}
 	pub fn pop(&mut self) -> Option<Card> {
-		let card = self.face_up.pop()?;
+		self.face_up.pop()
+	}
+	pub fn pop_flip_up(&mut self) -> Option<Card> {
+		let card = self.pop()?;
 		if self.face_up.is_empty() {
-			if let Some(card) = self.face_down.pop() {
-				self.face_up.push(card);
-			}
+			self.flip_up();
 		}
 		Some(card)
 	}

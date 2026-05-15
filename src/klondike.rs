@@ -234,12 +234,20 @@ impl Game for Klondike {
 			KlondikeInstruction {
 				src: KlondikePileId::Stock,
 				dst: KlondikePileId::Stock,
-			} if self.pile(KlondikePileId::Stock).is_empty() => {
-				self.pile_mut(KlondikePileId::Stock).swap_up_down();
+			} => {
+				if self.pile(KlondikePileId::Stock).face_down().is_empty() {
+					self.pile_mut(KlondikePileId::Stock).flip_it_and_reverse_it();
+				}else{
+					self.pile_mut(KlondikePileId::Stock).flip_up();
+				}
 			}
 			KlondikeInstruction { src, dst } => {
-				let card = self.pile_mut(src).pop().unwrap();
-				self.pile_mut(dst).push(card);
+				if let Some(card) = self.pile_mut(src).pop_flip_up() {
+					self.pile_mut(dst).push(card);
+				} else {
+					println!("Attempted to move from an empty src");
+					dbg!(instruction);
+				}
 			}
 		}
 	}
