@@ -42,6 +42,9 @@ impl CardValue {
 	pub const JACK: Self = CardValue(11);
 	pub const QUEEN: Self = CardValue(12);
 	pub const KING: Self = CardValue(13);
+	pub fn get(self) -> u8 {
+		self.0
+	}
 	pub fn checked_add(self, offset: u8) -> Option<CardValue> {
 		let new_value = self.0.checked_add(offset)?;
 		if 13 < new_value {
@@ -191,6 +194,9 @@ where
 			state,
 			history: Vec::new(),
 		}
+	}
+	pub fn state(&self) -> &G {
+		&self.state
 	}
 	pub fn history(&self) -> &[G::Instruction] {
 		&self.history
