@@ -6,6 +6,11 @@ pub trait Game {
 	fn process_instruction(&mut self, instruction: Self::Instruction);
 }
 
+/// An identifier which specifies the deck id, suit, and card value.
+/// 2 bits for deck ID
+/// 2 bits for suit ID
+/// 4 bits for card Value
+/// TODO: better encoding for slightly more decks
 pub struct Card(u8);
 pub struct CardValue(deranged::RangedU8<1, 13>);
 pub enum Suit {

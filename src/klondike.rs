@@ -28,7 +28,7 @@ struct KlondikeMove {
 	src: KlondikePileId,
 	dst: KlondikePileId,
 }
-pub struct KlondikeGame {
+pub struct Klondike {
 	config: KlondikeConfig,
 	state: KlondikeState,
 }
