@@ -86,7 +86,7 @@ impl Card {
 	}
 }
 
-#[derive(Hash)]
+#[derive(Clone, Debug, Hash)]
 pub struct Stack(Vec<Card>);
 impl Stack {
 	pub fn new() -> Self {
@@ -120,7 +120,7 @@ impl std::ops::DerefMut for Stack {
 	}
 }
 
-#[derive(Hash)]
+#[derive(Clone, Debug, Hash)]
 pub struct Pile {
 	face_down: Stack,
 	face_up: Stack,
