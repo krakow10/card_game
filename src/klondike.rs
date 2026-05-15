@@ -1,15 +1,11 @@
 use crate::Rng;
-use crate::card_game::{Card, Game, Stack};
+use crate::card_game::{Card, Game, Pile, Stack};
 
-struct Pile {
-	face_down: Stack,
-	face_up: Stack,
-}
 struct KlondikeConfig {}
 struct KlondikeState {
 	piles: [Pile; 14],
 }
-enum KlondikePileId {
+pub enum KlondikePileId {
 	Stock,
 	Hand,
 	Foundation0,
@@ -25,9 +21,21 @@ enum KlondikePileId {
 	Tableau6,
 	Tableau7,
 }
+impl std::ops::Index<KlondikePileId> for KlondikeState {
+	type Output = Pile;
+	fn index(&self, index: KlondikePileId) -> &Self::Output {
+		&self.piles[index as usize]
+	}
+}
+impl std::ops::IndexMut<KlondikePileId> for KlondikeState {
+	fn index_mut(&mut self, index: KlondikePileId) -> &mut Self::Output {
+		&mut self.piles[index as usize]
+	}
+}
+
 pub struct KlondikeInstruction {
-	src: KlondikePileId,
-	dst: KlondikePileId,
+	pub src: KlondikePileId,
+	pub dst: KlondikePileId,
 }
 pub struct Klondike {
 	config: KlondikeConfig,
@@ -49,6 +57,7 @@ impl Game for Klondike {
 		todo!()
 	}
 	fn process_instruction(&mut self, instruction: Self::Instruction) {
-		todo!()
+		let card = self.state[instruction.src].pop().unwrap();
+		self.state[instruction.dst].push(card);
 	}
 }

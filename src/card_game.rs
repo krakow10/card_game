@@ -13,9 +13,10 @@ pub trait Game {
 /// 2 bits for suit ID
 /// 4 bits for card Value
 /// TODO: better encoding for slightly more decks
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Card(u8);
-pub struct CardValue(deranged::RangedU8<1, 13>);
+pub struct CardValue(u8);
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum Suit {
 	Spades,
 	Hearts,
@@ -25,8 +26,7 @@ pub enum Suit {
 impl Card {
 	pub fn value(&self) -> CardValue {
 		let masked = self.0 & 0b1111;
-		let value = unsafe { deranged::RangedU8::new_unchecked(masked) };
-		CardValue(value)
+		CardValue(masked)
 	}
 	pub fn suit(&self) -> Suit {
 		let red = self.is_red();
@@ -66,6 +66,34 @@ impl Stack {
 	pub fn shuffle<R: rand::Rng>(&mut self, rng: &mut R) {
 		use rand::seq::SliceRandom;
 		self.0.shuffle(rng);
+	}
+	pub fn push(&mut self, card: Card) {
+		self.0.push(card);
+	}
+	pub fn pop(&mut self) -> Option<Card> {
+		self.0.pop()
+	}
+	pub fn is_empty(&mut self) -> bool {
+		self.0.is_empty()
+	}
+}
+
+pub struct Pile {
+	face_down: Stack,
+	face_up: Stack,
+}
+impl Pile {
+	pub fn pop(&mut self) -> Option<Card> {
+		let card = self.face_up.pop()?;
+		if self.face_up.is_empty() {
+			if let Some(card) = self.face_down.pop() {
+				self.face_up.push(card);
+			}
+		}
+		Some(card)
+	}
+	pub fn push(&mut self, card: Card) {
+		self.face_up.push(card);
 	}
 }
 
