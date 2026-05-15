@@ -73,15 +73,23 @@ impl KlondikeInstruction {
 	}
 }
 
+const STOCKS: usize = 1;
+const FOUNDATIONS: usize = 4;
+const TABLEAUS: usize = 8;
+const fn sum(n: usize) -> usize {
+	n * (n + 1) / 2
+}
+const MAX_STACK: usize = 52 - sum(TABLEAUS);
+
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 struct KlondikeState {
-	piles: [Pile<13>; 13],
+	piles: [Pile<MAX_STACK>; TABLEAUS + FOUNDATIONS + STOCKS],
 }
 impl KlondikeState {
-	fn pile(&self, index: KlondikePileId) -> &Pile<13> {
+	fn pile(&self, index: KlondikePileId) -> &Pile<MAX_STACK> {
 		&self.piles[index as usize]
 	}
-	fn pile_mut(&mut self, index: KlondikePileId) -> &mut Pile<13> {
+	fn pile_mut(&mut self, index: KlondikePileId) -> &mut Pile<MAX_STACK> {
 		&mut self.piles[index as usize]
 	}
 	fn is_instruction_valid(&self, instruction: KlondikeInstruction) -> bool {
@@ -220,11 +228,11 @@ impl Klondike {
 		Self { config, state }
 	}
 	#[inline]
-	pub fn pile(&self, index: KlondikePileId) -> &Pile<13> {
+	pub fn pile(&self, index: KlondikePileId) -> &Pile<MAX_STACK> {
 		self.state.pile(index)
 	}
 	#[inline]
-	fn pile_mut(&mut self, index: KlondikePileId) -> &mut Pile<13> {
+	fn pile_mut(&mut self, index: KlondikePileId) -> &mut Pile<MAX_STACK> {
 		self.state.pile_mut(index)
 	}
 }
