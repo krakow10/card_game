@@ -8,6 +8,25 @@ pub trait Game {
 	fn process_instruction(&mut self, instruction: Self::Instruction);
 }
 
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum Suit {
+	Spades = 0b00,
+	Hearts = 0b01,
+	Clubs = 0b10,
+	Diamonds = 0b11,
+}
+impl Suit {
+	pub const SUITS: [Self; 4] = [Self::Spades, Self::Hearts, Self::Clubs, Self::Diamonds];
+	/// Is the suit red.
+	pub fn is_red(self) -> bool {
+		self as u8 & 0b01 != 0
+	}
+	/// Is the suit shape spikey.  (Bouba/kiki)
+	pub fn is_kiki(self) -> bool {
+		self as u8 & 0b10 != 0
+	}
+}
+pub struct CardValue(u8);
 /// An identifier which specifies the deck id, suit, and card value.
 /// 2 bits for deck ID
 /// 2 bits for suit ID
@@ -15,15 +34,10 @@ pub trait Game {
 /// TODO: better encoding for slightly more decks
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Card(u8);
-pub struct CardValue(u8);
-#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub enum Suit {
-	Spades,
-	Hearts,
-	Clubs,
-	Diamonds,
-}
 impl Card {
+	pub fn new(deck: u8, suit: Suit, CardValue(value): CardValue) -> Self {
+		Self(deck << 6 | (suit as u8) << 4 | value)
+	}
 	pub fn value(&self) -> CardValue {
 		let masked = self.0 & 0b1111;
 		CardValue(masked)
@@ -53,28 +67,34 @@ impl Card {
 
 pub struct Stack(Vec<Card>);
 impl Stack {
+	pub fn new() -> Self {
+		Self(Vec::new())
+	}
 	/// Generate a full deck of cards with the specified deck id.
-	pub fn full_deck(deck_id: u8) -> Stack {
+	pub fn full_deck(deck: u8) -> Stack {
 		let mut stack = Vec::with_capacity(52);
-		for suit in 0..4 {
+		for suit in Suit::SUITS {
 			for value in 1..=13 {
-				stack.push(Card(deck_id << 6 | suit << 4 | value));
+				stack.push(Card::new(deck, suit, CardValue(value)));
 			}
 		}
 		Stack(stack)
 	}
-	pub fn shuffle<R: rand::Rng>(&mut self, rng: &mut R) {
-		use rand::seq::SliceRandom;
-		self.0.shuffle(rng);
+}
+impl From<Vec<Card>> for Stack {
+	fn from(value: Vec<Card>) -> Self {
+		Self(value)
 	}
-	pub fn push(&mut self, card: Card) {
-		self.0.push(card);
+}
+impl std::ops::Deref for Stack {
+	type Target = Vec<Card>;
+	fn deref(&self) -> &Self::Target {
+		&self.0
 	}
-	pub fn pop(&mut self) -> Option<Card> {
-		self.0.pop()
-	}
-	pub fn is_empty(&mut self) -> bool {
-		self.0.is_empty()
+}
+impl std::ops::DerefMut for Stack {
+	fn deref_mut(&mut self) -> &mut Self::Target {
+		&mut self.0
 	}
 }
 
@@ -83,6 +103,21 @@ pub struct Pile {
 	face_up: Stack,
 }
 impl Pile {
+	pub fn new() -> Self {
+		Self {
+			face_down: Stack::new(),
+			face_up: Stack::new(),
+		}
+	}
+	pub fn new_face_down(stack: Stack) -> Self {
+		Self {
+			face_down: stack,
+			face_up: Stack::new(),
+		}
+	}
+	pub fn make_face_down(&mut self) {
+		self.face_down.extend(self.face_up.drain(..));
+	}
 	pub fn pop(&mut self) -> Option<Card> {
 		let card = self.face_up.pop()?;
 		if self.face_up.is_empty() {
@@ -109,6 +144,9 @@ impl<G: Game> Session<G> {
 			state,
 			history: Vec::new(),
 		}
+	}
+	pub fn history(&self) -> &[G::Instruction] {
+		&self.history
 	}
 }
 impl<G: Game> Game for Session<G>
