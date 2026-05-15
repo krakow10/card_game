@@ -1,6 +1,7 @@
 use crate::Rng;
 use crate::card_game::{Game, Pile, Stack};
 
+#[derive(Clone, Debug)]
 pub struct KlondikeConfig {}
 impl Default for KlondikeConfig {
 	fn default() -> Self {
@@ -66,7 +67,7 @@ impl KlondikeInstruction {
 	}
 }
 
-#[derive(Clone, Hash)]
+#[derive(Clone, Debug, Hash)]
 struct KlondikeState {
 	piles: [Pile; 13],
 }
@@ -157,6 +158,7 @@ impl Iterator for KlondikeIter {
 	}
 }
 
+#[derive(Clone, Debug)]
 pub struct Klondike {
 	config: KlondikeConfig,
 	state: KlondikeState,

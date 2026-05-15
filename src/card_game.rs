@@ -165,14 +165,17 @@ impl Pile {
 }
 
 pub struct Session<G: Game> {
-	seed: Rng,
+	seed: G,
 	state: G,
 	history: Vec<G::Instruction>,
 }
-impl<G: Game> Session<G> {
-	pub fn new(seed: Rng, state: G) -> Self {
+impl<G: Game + Clone> Session<G>
+where
+	G::Instruction: Clone,
+{
+	pub fn new(state: G) -> Self {
 		Self {
-			seed,
+			seed: state.clone(),
 			state,
 			history: Vec::new(),
 		}
@@ -182,6 +185,15 @@ impl<G: Game> Session<G> {
 	}
 	pub fn is_winnable(&self) -> Option<Vec<G::Instruction>> {
 		None
+	}
+	pub fn undo(&mut self) {
+		// replay the entire history of the game except one move
+		self.history.pop();
+		let mut state = self.seed.clone();
+		for instruction in self.history() {
+			state.process_instruction(instruction.clone());
+		}
+		self.state = state;
 	}
 }
 impl<G: Game> Game for Session<G>

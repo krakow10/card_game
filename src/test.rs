@@ -5,9 +5,8 @@ fn test_klondike() {
 	use crate::klondike::Klondike;
 
 	// create game session
-	let seed = Rng::default();
-	let game = Klondike::new(seed.clone(), Default::default());
-	let mut session = Session::new(seed, game);
+	let game = Klondike::new(Rng::default(), Default::default());
+	let mut session = Session::new(game);
 
 	// is winnable
 	let is_winnable = session.is_winnable().is_some();

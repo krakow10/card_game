@@ -13,7 +13,7 @@ use card_game::klondike::Klondike;
 // create game session
 let seed = Rng::default();
 let game = Klondike::new(seed.clone(), Default::default());
-let mut session = Session::new(seed, game);
+let mut session = Session::new(game);
 
 // is winnable
 let is_winnable = session.is_winnable().is_some();
