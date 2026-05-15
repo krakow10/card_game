@@ -145,14 +145,20 @@ fn main() -> Result<(), std::io::Error> {
 		let mut input = String::new();
 		std::io::stdin().read_line(&mut input)?;
 		let Ok(instruction) = input.trim().parse() else {
-			println!("Invalid move!");
+			println!("Invalid instruction.");
 			continue;
 		};
 
 		// run game
 		match instruction {
 			SessionInstruction::Undo => session.undo(),
-			SessionInstruction::Klondike(instruction) => session.process_instruction(instruction),
+			SessionInstruction::Klondike(instruction) => {
+				if session.is_instruction_valid(instruction) {
+					session.process_instruction(instruction);
+				} else {
+					println!("Invalid move!");
+				}
+			}
 		}
 	}
 }
