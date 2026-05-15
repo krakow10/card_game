@@ -118,6 +118,23 @@ impl core::str::FromStr for Parsed<KlondikePileId> {
 	}
 }
 
+enum SessionInstruction {
+	Undo,
+	Klondike(KlondikeInstruction),
+}
+impl core::str::FromStr for SessionInstruction {
+	type Err = Invalid;
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		Ok(match s {
+			"UNDO" => Self::Undo,
+			other => {
+				let Parsed(ki) = other.parse()?;
+				Self::Klondike(ki)
+			}
+		})
+	}
+}
+
 fn main() -> Result<(), std::io::Error> {
 	let mut session = Session::new(Klondike::new_random_default());
 	loop {
@@ -127,12 +144,15 @@ fn main() -> Result<(), std::io::Error> {
 		// parse input
 		let mut input = String::new();
 		std::io::stdin().read_line(&mut input)?;
-		let Ok(Parsed(instruction)) = input.trim().parse() else {
+		let Ok(instruction) = input.trim().parse() else {
 			println!("Invalid move!");
 			continue;
 		};
 
-		// perform move
-		session.process_instruction(instruction);
+		// run game
+		match instruction {
+			SessionInstruction::Undo => session.undo(),
+			SessionInstruction::Klondike(instruction) => session.process_instruction(instruction),
+		}
 	}
 }
