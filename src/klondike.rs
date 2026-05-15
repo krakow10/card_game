@@ -147,7 +147,8 @@ impl Klondike {
 
 		// generate tableaus
 		let [t0, t1, t2, t3, t4, t5, t6, t7] = core::array::from_fn(|i| {
-			let stack = deck.split_off(i).into();
+			let remaining = deck.split_off(i).into();
+			let stack = core::mem::replace(&mut deck, remaining);
 			let mut pile = Pile::new_face_down(stack);
 			pile.push(deck.pop().unwrap());
 			pile
