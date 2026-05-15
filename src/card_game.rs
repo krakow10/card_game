@@ -1,3 +1,5 @@
+use crate::Rng;
+
 // TODO: pub struct ValidInstruction<I>(I);
 pub trait Game {
 	type Instruction;
@@ -61,11 +63,25 @@ impl Stack {
 		}
 		Stack(stack)
 	}
+	pub fn shuffle<R: rand::Rng>(&mut self, rng: &mut R) {
+		use rand::seq::SliceRandom;
+		self.0.shuffle(rng);
+	}
 }
 
 pub struct Session<G: Game> {
+	seed: Rng,
 	state: G,
 	history: Vec<G::Instruction>,
+}
+impl<G: Game> Session<G> {
+	pub fn new(seed: Rng, state: G) -> Self {
+		Self {
+			seed,
+			state,
+			history: Vec::new(),
+		}
+	}
 }
 impl<G: Game> Game for Session<G>
 where

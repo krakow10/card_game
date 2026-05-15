@@ -1,3 +1,4 @@
+use crate::Rng;
 use crate::card_game::{Card, Game, Stack};
 
 struct Pile {
@@ -24,7 +25,7 @@ enum KlondikePileId {
 	Tableau6,
 	Tableau7,
 }
-struct KlondikeMove {
+pub struct KlondikeInstruction {
 	src: KlondikePileId,
 	dst: KlondikePileId,
 }
@@ -33,8 +34,21 @@ pub struct Klondike {
 	state: KlondikeState,
 }
 impl Klondike {
-	pub fn new() -> Self {
-		let deck = Stack::full_deck(0);
+	pub fn new(mut seed: Rng) -> Self {
+		let mut deck = Stack::full_deck(0);
+		deck.shuffle(&mut seed);
 		unimplemented!()
+	}
+}
+impl Game for Klondike {
+	type Instruction = KlondikeInstruction;
+	fn enumerate_instructions(&self) -> impl Iterator<Item = Self::Instruction> {
+		vec![].into_iter()
+	}
+	fn validate_instruction(&self, instruction: Self::Instruction) -> bool {
+		todo!()
+	}
+	fn process_instruction(&mut self, instruction: Self::Instruction) {
+		todo!()
 	}
 }
