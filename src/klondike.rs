@@ -11,7 +11,6 @@ impl Default for KlondikeConfig {
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum KlondikePileId {
-	Stock,
 	Tableau0,
 	Tableau1,
 	Tableau2,
@@ -24,12 +23,12 @@ pub enum KlondikePileId {
 	Foundation1,
 	Foundation2,
 	Foundation3,
+	Stock,
 }
 impl KlondikePileId {
 	fn next(self) -> Option<Self> {
 		use KlondikePileId::*;
 		Some(match self {
-			Stock => Tableau0,
 			Tableau0 => Tableau1,
 			Tableau1 => Tableau2,
 			Tableau2 => Tableau3,
@@ -41,7 +40,8 @@ impl KlondikePileId {
 			Foundation0 => Foundation1,
 			Foundation1 => Foundation2,
 			Foundation2 => Foundation3,
-			Foundation3 => return None,
+			Foundation3 => Stock,
+			Stock => return None,
 		})
 	}
 }
@@ -148,8 +148,8 @@ impl KlondikeIter {
 	fn new() -> Self {
 		Self {
 			instruction: Some(KlondikeInstruction {
-				src: KlondikePileId::Stock,
-				dst: KlondikePileId::Stock,
+				src: KlondikePileId::Tableau0,
+				dst: KlondikePileId::Tableau1,
 			}),
 		}
 	}
@@ -192,7 +192,6 @@ impl Klondike {
 
 		let state = KlondikeState {
 			piles: [
-				stock,
 				t0,
 				t1,
 				t2,
@@ -205,6 +204,7 @@ impl Klondike {
 				Pile::new(),
 				Pile::new(),
 				Pile::new(),
+				stock,
 			],
 		};
 		Self { config, state }
