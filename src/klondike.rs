@@ -215,8 +215,19 @@ impl Game for Klondike {
 		self.state.is_instruction_valid(instruction)
 	}
 	fn process_instruction(&mut self, instruction: Self::Instruction) {
-		let card = self.pile_mut(instruction.src).pop().unwrap();
-		self.pile_mut(instruction.dst).push(card);
+		match instruction {
+			// Reset the stock if it's empty
+			KlondikeInstruction {
+				src: KlondikePileId::Stock,
+				dst: KlondikePileId::Stock,
+			} if self.pile(KlondikePileId::Stock).is_empty() => {
+				self.pile_mut(KlondikePileId::Stock).swap_up_down();
+			}
+			KlondikeInstruction { src, dst } => {
+				let card = self.pile_mut(src).pop().unwrap();
+				self.pile_mut(dst).push(card);
+			}
+		}
 	}
 	fn is_win(&self) -> bool {
 		// assuming only valid moves, tableau empty and stock empty means win

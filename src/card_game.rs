@@ -138,8 +138,8 @@ impl Pile {
 			face_up: Stack::new(),
 		}
 	}
-	pub fn make_face_down(&mut self) {
-		self.face_down.extend(self.face_up.drain(..));
+	pub fn swap_up_down(&mut self) {
+		core::mem::swap(&mut self.face_up, &mut self.face_down);
 	}
 	pub fn is_empty(&self) -> bool {
 		self.face_down.is_empty() && self.face_up.is_empty()
