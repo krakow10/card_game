@@ -192,6 +192,7 @@ impl Klondike {
 
 		let state = KlondikeState {
 			piles: [
+				stock,
 				t0,
 				t1,
 				t2,
@@ -200,7 +201,6 @@ impl Klondike {
 				t5,
 				t6,
 				t7,
-				stock,
 				Pile::new(),
 				Pile::new(),
 				Pile::new(),
