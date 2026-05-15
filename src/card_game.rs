@@ -124,13 +124,13 @@ impl<const CAP: usize> From<arrayvec::ArrayVec<Card, CAP>> for Stack<CAP> {
 		Self(value)
 	}
 }
-impl<const CAP: usize> std::ops::Deref for Stack<CAP> {
+impl<const CAP: usize> core::ops::Deref for Stack<CAP> {
 	type Target = arrayvec::ArrayVec<Card, CAP>;
 	fn deref(&self) -> &Self::Target {
 		&self.0
 	}
 }
-impl<const CAP: usize> std::ops::DerefMut for Stack<CAP> {
+impl<const CAP: usize> core::ops::DerefMut for Stack<CAP> {
 	fn deref_mut(&mut self) -> &mut Self::Target {
 		&mut self.0
 	}
