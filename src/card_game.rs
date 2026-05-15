@@ -227,42 +227,33 @@ where
 			possible_instructions_iter: P,
 			instruction: I,
 		}
-		let state = self.state.clone();
-		let mut state = StateMachine {
-			possible_instructions_iter: state.possible_instructions(),
-			state,
-			instruction: None,
-		};
-		let mut history = Vec::new();
-		'outer: while !state.state.is_win() {
-			observed.insert(state.state.clone());
-			for instruction in &mut state.possible_instructions_iter {
-				let mut next_state = state.state.clone();
+		let mut state = self.state.clone();
+		let mut it = state.possible_instructions();
+		let mut path = Vec::new();
+		'outer: while !state.is_win() {
+			observed.insert(state.clone());
+			for instruction in &mut it {
+				let mut next_state = state.clone();
 				next_state.process_instruction(instruction.clone());
 				if !observed.contains(&next_state) {
-					let it = next_state.possible_instructions();
-					history.push(core::mem::replace(
-						&mut state,
-						StateMachine {
-							state: next_state,
-							possible_instructions_iter: it,
-							instruction: Some(instruction),
-						},
-					));
+					let possible_instructions_iter =
+						core::mem::replace(&mut it, next_state.possible_instructions());
+					let state = core::mem::replace(&mut state, next_state);
+					path.push(StateMachine {
+						state,
+						possible_instructions_iter,
+						instruction,
+					});
 					continue 'outer;
 				}
 			}
-			let Some(last_state) = history.pop() else {
+			let Some(last_state) = path.pop() else {
 				return None;
 			};
-			state = last_state;
+			state = last_state.state;
+			it = last_state.possible_instructions_iter;
 		}
-		Some(
-			history
-				.into_iter()
-				.filter_map(|state| state.instruction)
-				.collect(),
-		)
+		Some(path.into_iter().map(|state| state.instruction).collect())
 	}
 	pub fn undo(&mut self) {
 		// replay the entire history of the game except one move
