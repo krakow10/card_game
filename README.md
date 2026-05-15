@@ -6,18 +6,20 @@ Card Game
 ## Example
 
 ```rust
+use card_game::Rng;
 use card_game::card_game::{Session, Game};
 use card_game::klondike::Klondike;
 
 // create game session
-let game = Klondike::new();
-let mut session = Session::new(game);
+let seed = Rng::default();
+let game = Klondike::new(seed.clone(), Default::default());
+let mut session = Session::new(seed, game);
 
 // is winnable
-let is_winnable = session.is_winnable();
+let is_winnable = session.is_winnable().is_some();
 
 // play game
-while let Some(instruction) = session.enumerate_instructions() {
+while let Some(instruction) = session.possible_instructions().next() {
 	session.process_instruction(instruction);
 }
 
