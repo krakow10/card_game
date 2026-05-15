@@ -125,14 +125,18 @@ impl KlondikeState {
 			// other = move to tableau
 			KlondikeInstruction { src, dst } => {
 				// get the top cards
-				if let Some(src_card) = self.pile(src).face_up().last()
-					&& let Some(dst_card) = self.pile(dst).face_up().last()
-					// red-ness is opposite?
-					&& src_card.is_red() != dst_card.is_red()
-					// value is -1?
-					&& dst_card.value().checked_sub(1) == Some(src_card.value())
-				{
-					true
+				if let Some(src_card) = self.pile(src).face_up().last() {
+					match self.pile(dst).face_up().last() {
+						// destination card exists
+						Some(dst_card) => {
+							// red-ness is opposite?
+							src_card.is_red() != dst_card.is_red()
+							// value is -1?
+							&& dst_card.value().checked_sub(1) == Some(src_card.value())
+						}
+						// only king is allowed to go onto empty tableau
+						None => src_card.value() == CardValue::KING,
+					}
 				} else {
 					false
 				}
