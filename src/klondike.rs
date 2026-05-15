@@ -32,3 +32,9 @@ pub struct Klondike {
 	config: KlondikeConfig,
 	state: KlondikeState,
 }
+impl Klondike {
+	pub fn new() -> Self {
+		let deck = Stack::full_deck(0);
+		unimplemented!()
+	}
+}

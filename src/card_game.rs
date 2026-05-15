@@ -11,6 +11,7 @@ pub trait Game {
 /// 2 bits for suit ID
 /// 4 bits for card Value
 /// TODO: better encoding for slightly more decks
+#[derive(Clone, Debug)]
 pub struct Card(u8);
 pub struct CardValue(deranged::RangedU8<1, 13>);
 pub enum Suit {
@@ -19,8 +20,48 @@ pub enum Suit {
 	Clubs,
 	Diamonds,
 }
+impl Card {
+	pub fn value(&self) -> CardValue {
+		let masked = self.0 & 0b1111;
+		let value = unsafe { deranged::RangedU8::new_unchecked(masked) };
+		CardValue(value)
+	}
+	pub fn suit(&self) -> Suit {
+		let red = self.is_red();
+		let kiki = self.is_kiki();
+		match (kiki, red) {
+			(false, false) => Suit::Spades,
+			(false, true) => Suit::Hearts,
+			(true, false) => Suit::Clubs,
+			(true, true) => Suit::Diamonds,
+		}
+	}
+	/// Is the suit red.
+	pub fn is_red(&self) -> bool {
+		self.0 & 0b010000 != 0
+	}
+	/// Is the suit shape spikey.  (Bouba/kiki)
+	pub fn is_kiki(&self) -> bool {
+		self.0 & 0b100000 != 0
+	}
+	pub fn deck(&self) -> u8 {
+		self.0 >> 6
+	}
+}
 
 pub struct Stack(Vec<Card>);
+impl Stack {
+	/// Generate a full deck of cards with the specified deck id.
+	pub fn full_deck(deck_id: u8) -> Stack {
+		let mut stack = Vec::with_capacity(52);
+		for suit in 0..4 {
+			for value in 1..=13 {
+				stack.push(Card(deck_id << 6 | suit << 4 | value));
+			}
+		}
+		Stack(stack)
+	}
+}
 
 pub struct Session<G: Game> {
 	state: G,
