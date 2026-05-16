@@ -4,7 +4,9 @@ mod klondike;
 pub type Rng = rand::rngs::ThreadRng;
 
 use card_game::{Card, Game, Session, Suit};
-use klondike::{Klondike, KlondikeInstruction, KlondikePileId};
+use klondike::{
+	InstructionSrc, Klondike, KlondikeInstruction, KlondikePileId, KlondikePileStack, SkipCards,
+};
 
 use std::fmt::Display;
 
@@ -93,6 +95,26 @@ impl core::str::FromStr for Parsed<KlondikeInstruction> {
 		let Parsed(src) = s.get(0..2).ok_or(Invalid)?.parse()?;
 		let Parsed(dst) = s.get(3..5).ok_or(Invalid)?.parse()?;
 		Ok(Parsed(KlondikeInstruction { src, dst }))
+	}
+}
+impl core::str::FromStr for Parsed<InstructionSrc> {
+	type Err = Invalid;
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		Ok(Parsed(match s {
+			"ST" | "st" => InstructionSrc::new(KlondikePileStack::Stock),
+			"T1" | "t1" => InstructionSrc::new(KlondikePileStack::Tableau1(SkipCards::Zero)),
+			"T2" | "t2" => InstructionSrc::new(KlondikePileStack::Tableau2(SkipCards::Zero)),
+			"T3" | "t3" => InstructionSrc::new(KlondikePileStack::Tableau3(SkipCards::Zero)),
+			"T4" | "t4" => InstructionSrc::new(KlondikePileStack::Tableau4(SkipCards::Zero)),
+			"T5" | "t5" => InstructionSrc::new(KlondikePileStack::Tableau5(SkipCards::Zero)),
+			"T6" | "t6" => InstructionSrc::new(KlondikePileStack::Tableau6(SkipCards::Zero)),
+			"T7" | "t7" => InstructionSrc::new(KlondikePileStack::Tableau7(SkipCards::Zero)),
+			"F1" | "f1" => InstructionSrc::new(KlondikePileStack::Foundation1),
+			"F2" | "f2" => InstructionSrc::new(KlondikePileStack::Foundation2),
+			"F3" | "f3" => InstructionSrc::new(KlondikePileStack::Foundation3),
+			"F4" | "f4" => InstructionSrc::new(KlondikePileStack::Foundation4),
+			_ => return Err(Invalid),
+		}))
 	}
 }
 impl core::str::FromStr for Parsed<KlondikePileId> {
