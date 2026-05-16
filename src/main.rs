@@ -144,6 +144,7 @@ enum SessionInstruction {
 	Hint,
 	Auto,
 	Stock,
+	Exit,
 	Klondike(KlondikeInstruction),
 }
 impl core::str::FromStr for SessionInstruction {
@@ -154,6 +155,7 @@ impl core::str::FromStr for SessionInstruction {
 			"UNDO" | "undo" | "u" => Self::Undo,
 			"HINT" | "hint" | "h" => Self::Hint,
 			"AUTO" | "auto" | "a" => Self::Auto,
+			"exit" => Self::Exit,
 			"s" => Self::Stock,
 			other => {
 				let Parsed(ki) = other.parse()?;
@@ -181,6 +183,7 @@ fn main() -> Result<(), std::io::Error> {
 		match instruction {
 			SessionInstruction::New => session = Session::new(Klondike::new_random_default()),
 			SessionInstruction::Undo => session.undo(),
+			SessionInstruction::Exit => break Ok(()),
 			SessionInstruction::Hint => {
 				for instruction in session.possible_instructions() {
 					println!("{instruction:?}");
