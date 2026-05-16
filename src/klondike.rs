@@ -256,11 +256,11 @@ const TABLEAUS: usize = 7;
 const fn sum(n: usize) -> usize {
 	n * (n + 1) / 2
 }
-const MAX_STACK: usize = 52 - sum(TABLEAUS);
+const STOCK: usize = 52 - sum(TABLEAUS);
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct KlondikeState {
-	stock: Pile<MAX_STACK, MAX_STACK>,
+	stock: Pile<STOCK, STOCK>,
 	foundations: [Stack<13>; 4],
 	tableau1: Pile<0, 13>,
 	tableau2: Pile<1, 13>,
@@ -271,20 +271,20 @@ pub struct KlondikeState {
 	tableau7: Pile<6, 13>,
 }
 impl KlondikeState {
-	pub const fn stock(&self) -> &Pile<MAX_STACK, MAX_STACK> {
+	pub const fn stock(&self) -> &Pile<STOCK, STOCK> {
 		&self.stock
 	}
 	pub const fn foundation1(&self) -> &Stack<13> {
-		&self.foundations[1 - 1]
+		&self.foundations[Foundation::Foundation1 as usize]
 	}
 	pub const fn foundation2(&self) -> &Stack<13> {
-		&self.foundations[2 - 1]
+		&self.foundations[Foundation::Foundation2 as usize]
 	}
 	pub const fn foundation3(&self) -> &Stack<13> {
-		&self.foundations[3 - 1]
+		&self.foundations[Foundation::Foundation3 as usize]
 	}
 	pub const fn foundation4(&self) -> &Stack<13> {
-		&self.foundations[4 - 1]
+		&self.foundations[Foundation::Foundation4 as usize]
 	}
 	pub const fn tableau1(&self) -> &Pile<0, 13> {
 		&self.tableau1
@@ -307,7 +307,7 @@ impl KlondikeState {
 	pub const fn tableau7(&self) -> &Pile<6, 13> {
 		&self.tableau7
 	}
-	fn card(&self, src: KlondikePileStack) -> Option<&Card> {
+	pub fn card(&self, src: KlondikePileStack) -> Option<&Card> {
 		match src {
 			KlondikePileStack::Tableau(TableauStack {
 				tableau,
@@ -327,7 +327,7 @@ impl KlondikeState {
 			KlondikePileStack::Stock => self.stock.face_up().last(),
 		}
 	}
-	fn top_card(&self, src: KlondikePile) -> Option<&Card> {
+	pub fn top_card(&self, src: KlondikePile) -> Option<&Card> {
 		match src {
 			KlondikePile::Tableau(tableau) => match tableau {
 				Tableau::Tableau1 => self.tableau1.face_up().last(),
@@ -394,7 +394,7 @@ impl KlondikeState {
 			KlondikePile::Stock => self.stock.extend(cards),
 		}
 	}
-	fn is_instruction_valid(&self, instruction: KlondikeInstruction) -> bool {
+	pub fn is_instruction_valid(&self, instruction: KlondikeInstruction) -> bool {
 		match instruction {
 			// Stock -> Stock draws a card or resets the stock
 			KlondikeInstruction::RotateStock => {
