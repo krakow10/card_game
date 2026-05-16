@@ -101,18 +101,18 @@ impl core::str::FromStr for Parsed<InstructionSrc> {
 	type Err = Invalid;
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
 		Ok(Parsed(match s {
-			"ST" | "st" => InstructionSrc::new(KlondikePileStack::Stock),
-			"T1" | "t1" => InstructionSrc::new(KlondikePileStack::Tableau1(SkipCards::Zero)),
-			"T2" | "t2" => InstructionSrc::new(KlondikePileStack::Tableau2(SkipCards::Zero)),
-			"T3" | "t3" => InstructionSrc::new(KlondikePileStack::Tableau3(SkipCards::Zero)),
-			"T4" | "t4" => InstructionSrc::new(KlondikePileStack::Tableau4(SkipCards::Zero)),
-			"T5" | "t5" => InstructionSrc::new(KlondikePileStack::Tableau5(SkipCards::Zero)),
-			"T6" | "t6" => InstructionSrc::new(KlondikePileStack::Tableau6(SkipCards::Zero)),
-			"T7" | "t7" => InstructionSrc::new(KlondikePileStack::Tableau7(SkipCards::Zero)),
-			"F1" | "f1" => InstructionSrc::new(KlondikePileStack::Foundation1),
-			"F2" | "f2" => InstructionSrc::new(KlondikePileStack::Foundation2),
-			"F3" | "f3" => InstructionSrc::new(KlondikePileStack::Foundation3),
-			"F4" | "f4" => InstructionSrc::new(KlondikePileStack::Foundation4),
+			"st" => InstructionSrc::new(KlondikePileStack::Stock),
+			"t1" => InstructionSrc::new(KlondikePileStack::Tableau1(SkipCards::Zero)),
+			"t2" => InstructionSrc::new(KlondikePileStack::Tableau2(SkipCards::Zero)),
+			"t3" => InstructionSrc::new(KlondikePileStack::Tableau3(SkipCards::Zero)),
+			"t4" => InstructionSrc::new(KlondikePileStack::Tableau4(SkipCards::Zero)),
+			"t5" => InstructionSrc::new(KlondikePileStack::Tableau5(SkipCards::Zero)),
+			"t6" => InstructionSrc::new(KlondikePileStack::Tableau6(SkipCards::Zero)),
+			"t7" => InstructionSrc::new(KlondikePileStack::Tableau7(SkipCards::Zero)),
+			"f1" => InstructionSrc::new(KlondikePileStack::Foundation1),
+			"f2" => InstructionSrc::new(KlondikePileStack::Foundation2),
+			"f3" => InstructionSrc::new(KlondikePileStack::Foundation3),
+			"f4" => InstructionSrc::new(KlondikePileStack::Foundation4),
 			_ => return Err(Invalid),
 		}))
 	}
@@ -121,18 +121,18 @@ impl core::str::FromStr for Parsed<KlondikePileId> {
 	type Err = Invalid;
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
 		Ok(Parsed(match s {
-			"ST" | "st" => KlondikePileId::Stock,
-			"T1" | "t1" => KlondikePileId::Tableau1,
-			"T2" | "t2" => KlondikePileId::Tableau2,
-			"T3" | "t3" => KlondikePileId::Tableau3,
-			"T4" | "t4" => KlondikePileId::Tableau4,
-			"T5" | "t5" => KlondikePileId::Tableau5,
-			"T6" | "t6" => KlondikePileId::Tableau6,
-			"T7" | "t7" => KlondikePileId::Tableau7,
-			"F1" | "f1" => KlondikePileId::Foundation1,
-			"F2" | "f2" => KlondikePileId::Foundation2,
-			"F3" | "f3" => KlondikePileId::Foundation3,
-			"F4" | "f4" => KlondikePileId::Foundation4,
+			"st" => KlondikePileId::Stock,
+			"t1" => KlondikePileId::Tableau1,
+			"t2" => KlondikePileId::Tableau2,
+			"t3" => KlondikePileId::Tableau3,
+			"t4" => KlondikePileId::Tableau4,
+			"t5" => KlondikePileId::Tableau5,
+			"t6" => KlondikePileId::Tableau6,
+			"t7" => KlondikePileId::Tableau7,
+			"f1" => KlondikePileId::Foundation1,
+			"f2" => KlondikePileId::Foundation2,
+			"f3" => KlondikePileId::Foundation3,
+			"f4" => KlondikePileId::Foundation4,
 			_ => return Err(Invalid),
 		}))
 	}
@@ -151,10 +151,10 @@ impl core::str::FromStr for SessionInstruction {
 	type Err = Invalid;
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
 		Ok(match s {
-			"NEW" | "new" | "n" => Self::New,
-			"UNDO" | "undo" | "u" => Self::Undo,
-			"HINT" | "hint" | "h" => Self::Hint,
-			"AUTO" | "auto" | "a" => Self::Auto,
+			"new" | "n" => Self::New,
+			"undo" | "u" => Self::Undo,
+			"hint" | "h" => Self::Hint,
+			"auto" | "a" => Self::Auto,
 			"exit" => Self::Exit,
 			"s" => Self::Stock,
 			other => {
