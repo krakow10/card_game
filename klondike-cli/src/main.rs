@@ -1,26 +1,22 @@
-mod card_game;
-mod klondike;
-
-pub type Rng = rand::rngs::ThreadRng;
-
-use card_game::{Card, Game, Pile, Session, Suit};
-use klondike::{
+use card_game::card_game::{Card, Game, Pile, Session, Suit};
+use card_game::klondike::{
 	DstFoundation, DstTableau, Foundation, Klondike, KlondikeInstruction, KlondikePile,
 	KlondikePileStack, SkipCards, Tableau, TableauStack,
 };
 
 use std::fmt::Display;
+struct Displayed<T>(T);
 
-impl Display for Card {
+impl Display for Displayed<&Card> {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		match self.value().get() {
+		match self.0.value().get() {
 			1 => write!(f, "A"),
 			11 => write!(f, "J"),
 			12 => write!(f, "Q"),
 			13 => write!(f, "K"),
 			other => write!(f, "{other}"),
 		}?;
-		match self.suit() {
+		match self.0.suit() {
 			Suit::Spades => write!(f, "♠"),
 			Suit::Hearts => write!(f, "♡"),
 			Suit::Clubs => write!(f, "♣"),
@@ -33,30 +29,30 @@ struct OptionalCard<'a>(Option<&'a Card>);
 impl Display for OptionalCard<'_> {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		match self {
-			OptionalCard(Some(card)) => write!(f, "{card}"),
+			&OptionalCard(Some(card)) => write!(f, "{}", Displayed(card)),
 			OptionalCard(None) => write!(f, "None"),
 		}
 	}
 }
 
-impl Display for Klondike {
+impl Display for Displayed<&Klondike> {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		// Stock
-		let stock_count = self.state().stock().face_down().len();
+		let stock_count = self.0.state().stock().face_down().len();
 		writeln!(f, "Stock: {stock_count}")?;
 
 		// Hand
-		let hand = self.state().stock().face_up().last();
+		let hand = self.0.state().stock().face_up().last();
 		writeln!(f, "Hand: {}", OptionalCard(hand))?;
 
 		// Foundations
 		write!(
 			f,
 			"Foundations: {} {} {} {}",
-			OptionalCard(self.state().foundation1().last()),
-			OptionalCard(self.state().foundation2().last()),
-			OptionalCard(self.state().foundation3().last()),
-			OptionalCard(self.state().foundation4().last()),
+			OptionalCard(self.0.state().foundation1().last()),
+			OptionalCard(self.0.state().foundation2().last()),
+			OptionalCard(self.0.state().foundation3().last()),
+			OptionalCard(self.0.state().foundation4().last()),
 		)?;
 		writeln!(f)?;
 
@@ -70,18 +66,18 @@ impl Display for Klondike {
 				write!(f, "]")?;
 			}
 			for card in pile.face_up() {
-				write!(f, "{card}")?;
+				write!(f, "{}", Displayed(card))?;
 			}
 			writeln!(f)?;
 			Ok(())
 		}
-		write_pile(f, self.state().tableau1(), 1)?;
-		write_pile(f, self.state().tableau2(), 2)?;
-		write_pile(f, self.state().tableau3(), 3)?;
-		write_pile(f, self.state().tableau4(), 4)?;
-		write_pile(f, self.state().tableau5(), 5)?;
-		write_pile(f, self.state().tableau6(), 6)?;
-		write_pile(f, self.state().tableau7(), 7)?;
+		write_pile(f, self.0.state().tableau1(), 1)?;
+		write_pile(f, self.0.state().tableau2(), 2)?;
+		write_pile(f, self.0.state().tableau3(), 3)?;
+		write_pile(f, self.0.state().tableau4(), 4)?;
+		write_pile(f, self.0.state().tableau5(), 5)?;
+		write_pile(f, self.0.state().tableau6(), 6)?;
+		write_pile(f, self.0.state().tableau7(), 7)?;
 
 		Ok(())
 	}
@@ -203,7 +199,7 @@ fn main() -> Result<(), std::io::Error> {
 	let mut session = Session::new(Klondike::new_random_default());
 	loop {
 		// display game
-		println!("{}", session.state());
+		println!("{}", Displayed(session.state()));
 
 		// parse input
 		let mut input = String::new();
