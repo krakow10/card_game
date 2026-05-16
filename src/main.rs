@@ -5,7 +5,8 @@ pub type Rng = rand::rngs::ThreadRng;
 
 use card_game::{Card, Game, Pile, Session, Suit};
 use klondike::{
-	InstructionSrc, Klondike, KlondikeInstruction, KlondikePileId, KlondikePileStack, SkipCards,
+	InstructionSrc, Klondike, KlondikeInstruction, KlondikePileId, KlondikePileStack,
+	KlondikeState, SkipCards,
 };
 
 use std::fmt::Display;
@@ -89,32 +90,16 @@ impl Display for Klondike {
 #[derive(Debug)]
 struct Invalid;
 struct Parsed<T>(T);
-impl core::str::FromStr for Parsed<KlondikeInstruction> {
+struct NaiveInstruction {
+	src: KlondikePileId,
+	dst: KlondikePileId,
+}
+impl core::str::FromStr for NaiveInstruction {
 	type Err = Invalid;
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
 		let Parsed(src) = s.get(0..2).ok_or(Invalid)?.parse()?;
 		let Parsed(dst) = s.get(3..5).ok_or(Invalid)?.parse()?;
-		Ok(Parsed(KlondikeInstruction { src, dst }))
-	}
-}
-impl core::str::FromStr for Parsed<InstructionSrc> {
-	type Err = Invalid;
-	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		Ok(Parsed(match s {
-			"st" => InstructionSrc::new(KlondikePileStack::Stock),
-			"t1" => InstructionSrc::new(KlondikePileStack::Tableau1(SkipCards::Zero)),
-			"t2" => InstructionSrc::new(KlondikePileStack::Tableau2(SkipCards::Zero)),
-			"t3" => InstructionSrc::new(KlondikePileStack::Tableau3(SkipCards::Zero)),
-			"t4" => InstructionSrc::new(KlondikePileStack::Tableau4(SkipCards::Zero)),
-			"t5" => InstructionSrc::new(KlondikePileStack::Tableau5(SkipCards::Zero)),
-			"t6" => InstructionSrc::new(KlondikePileStack::Tableau6(SkipCards::Zero)),
-			"t7" => InstructionSrc::new(KlondikePileStack::Tableau7(SkipCards::Zero)),
-			"f1" => InstructionSrc::new(KlondikePileStack::Foundation1),
-			"f2" => InstructionSrc::new(KlondikePileStack::Foundation2),
-			"f3" => InstructionSrc::new(KlondikePileStack::Foundation3),
-			"f4" => InstructionSrc::new(KlondikePileStack::Foundation4),
-			_ => return Err(Invalid),
-		}))
+		Ok(NaiveInstruction { src, dst })
 	}
 }
 impl core::str::FromStr for Parsed<KlondikePileId> {
@@ -145,7 +130,7 @@ enum SessionInstruction {
 	Auto,
 	Stock,
 	Exit,
-	Klondike(KlondikeInstruction),
+	Klondike(NaiveInstruction),
 }
 impl core::str::FromStr for SessionInstruction {
 	type Err = Invalid;
@@ -157,12 +142,109 @@ impl core::str::FromStr for SessionInstruction {
 			"auto" | "a" => Self::Auto,
 			"exit" => Self::Exit,
 			"s" => Self::Stock,
-			other => {
-				let Parsed(ki) = other.parse()?;
-				Self::Klondike(ki)
-			}
+			other => Self::Klondike(other.parse()?),
 		})
 	}
+}
+
+fn find_valid_instruction(
+	state: &Klondike,
+	naive_instruction: NaiveInstruction,
+) -> Option<KlondikeInstruction> {
+	const SKIP_LIST: [SkipCards; 13] = [
+		SkipCards::Zero,
+		SkipCards::One,
+		SkipCards::Two,
+		SkipCards::Three,
+		SkipCards::Four,
+		SkipCards::Five,
+		SkipCards::Six,
+		SkipCards::Seven,
+		SkipCards::Eight,
+		SkipCards::Nine,
+		SkipCards::Ten,
+		SkipCards::Eleven,
+		SkipCards::Twelve,
+	];
+	let dst = naive_instruction.dst;
+	let src = match naive_instruction.src {
+		KlondikePileId::Tableau1 => {
+			for skip in SKIP_LIST {
+				let src = InstructionSrc::new(KlondikePileStack::Tableau1(skip));
+				let instruction = KlondikeInstruction { src, dst };
+				if state.is_instruction_valid(instruction) {
+					return Some(instruction);
+				}
+			}
+			return None;
+		}
+		KlondikePileId::Tableau2 => {
+			for skip in SKIP_LIST {
+				let src = InstructionSrc::new(KlondikePileStack::Tableau2(skip));
+				let instruction = KlondikeInstruction { src, dst };
+				if state.is_instruction_valid(instruction) {
+					return Some(instruction);
+				}
+			}
+			return None;
+		}
+		KlondikePileId::Tableau3 => {
+			for skip in SKIP_LIST {
+				let src = InstructionSrc::new(KlondikePileStack::Tableau3(skip));
+				let instruction = KlondikeInstruction { src, dst };
+				if state.is_instruction_valid(instruction) {
+					return Some(instruction);
+				}
+			}
+			return None;
+		}
+		KlondikePileId::Tableau4 => {
+			for skip in SKIP_LIST {
+				let src = InstructionSrc::new(KlondikePileStack::Tableau4(skip));
+				let instruction = KlondikeInstruction { src, dst };
+				if state.is_instruction_valid(instruction) {
+					return Some(instruction);
+				}
+			}
+			return None;
+		}
+		KlondikePileId::Tableau5 => {
+			for skip in SKIP_LIST {
+				let src = InstructionSrc::new(KlondikePileStack::Tableau5(skip));
+				let instruction = KlondikeInstruction { src, dst };
+				if state.is_instruction_valid(instruction) {
+					return Some(instruction);
+				}
+			}
+			return None;
+		}
+		KlondikePileId::Tableau6 => {
+			for skip in SKIP_LIST {
+				let src = InstructionSrc::new(KlondikePileStack::Tableau6(skip));
+				let instruction = KlondikeInstruction { src, dst };
+				if state.is_instruction_valid(instruction) {
+					return Some(instruction);
+				}
+			}
+			return None;
+		}
+		KlondikePileId::Tableau7 => {
+			for skip in SKIP_LIST {
+				let src = InstructionSrc::new(KlondikePileStack::Tableau7(skip));
+				let instruction = KlondikeInstruction { src, dst };
+				if state.is_instruction_valid(instruction) {
+					return Some(instruction);
+				}
+			}
+			return None;
+		}
+		KlondikePileId::Foundation1 => InstructionSrc::new(KlondikePileStack::Foundation1),
+		KlondikePileId::Foundation2 => InstructionSrc::new(KlondikePileStack::Foundation2),
+		KlondikePileId::Foundation3 => InstructionSrc::new(KlondikePileStack::Foundation3),
+		KlondikePileId::Foundation4 => InstructionSrc::new(KlondikePileStack::Foundation4),
+		KlondikePileId::Stock => InstructionSrc::new(KlondikePileStack::Stock),
+	};
+	return Some(KlondikeInstruction { src, dst });
 }
 
 fn main() -> Result<(), std::io::Error> {
@@ -197,8 +279,10 @@ fn main() -> Result<(), std::io::Error> {
 				}
 			}
 			SessionInstruction::Stock => session.process_instruction(KlondikeInstruction::stock()),
-			SessionInstruction::Klondike(instruction) => {
-				if session.is_instruction_valid(instruction) {
+			SessionInstruction::Klondike(naive_instruction) => {
+				if let Some(instruction) =
+					find_valid_instruction(session.state(), naive_instruction)
+				{
 					session.process_instruction(instruction);
 				} else {
 					println!("Invalid move!");
