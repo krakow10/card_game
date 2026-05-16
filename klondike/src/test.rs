@@ -1,5 +1,5 @@
-use crate::card_game::{Game, Session};
-use crate::klondike::Klondike;
+use crate::Klondike;
+use card_game::{Game, Session};
 #[test]
 fn test_is_winnable() {
 	// is winnable

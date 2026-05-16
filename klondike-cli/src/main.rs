@@ -1,5 +1,5 @@
-use card_game::card_game::{Card, Game, Pile, Session, Suit};
-use card_game::klondike::{
+use card_game::{Card, Game, Pile, Session, Suit};
+use klondike::{
 	DstFoundation, DstTableau, Foundation, Klondike, KlondikeInstruction, KlondikePile,
 	KlondikePileStack, SkipCards, Tableau, TableauStack,
 };

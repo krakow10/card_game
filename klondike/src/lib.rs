@@ -1,5 +1,14 @@
-use crate::Rng;
-use crate::card_game::{Card, CardValue, Game, Pile, Stack};
+pub type Rng = rand::rngs::ThreadRng;
+
+use card_game::{Card, CardValue, Game, Pile, Stack};
+
+#[cfg(test)]
+mod test;
+
+// test readme
+#[doc = include_str!("../README.md")]
+#[cfg(doctest)]
+struct ReadmeDoctests;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct KlondikeConfig {}
@@ -480,8 +489,8 @@ impl Klondike {
 		let mut deck = deck.into_iter();
 
 		// generate tableaus
-		fn pile<const DN: usize>(deck: &mut arrayvec::IntoIter<Card, 52>) -> Pile<DN, 13> {
-			let stack = arrayvec::ArrayVec::from_iter(deck.take(DN)).into();
+		fn pile<const DN: usize>(deck: &mut <Stack<52> as IntoIterator>::IntoIter) -> Pile<DN, 13> {
+			let stack = Stack::from_iter(deck.take(DN));
 			let mut pile = Pile::new_face_down(stack);
 			pile.push(deck.next().unwrap());
 			pile
@@ -495,7 +504,7 @@ impl Klondike {
 		let tableau7 = pile(&mut deck);
 
 		// stock is remaining cards
-		let stock = Pile::new_face_down(arrayvec::ArrayVec::from_iter(deck).into());
+		let stock = Pile::new_face_down(Stack::from_iter(deck));
 
 		let state = KlondikeState {
 			stock,

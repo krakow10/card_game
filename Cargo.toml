@@ -1,6 +1,7 @@
 [workspace]
 members = [
 	"card_game",
+	"klondike",
 	"klondike-cli",
 ]
 resolver = "3"

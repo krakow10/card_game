@@ -10,4 +10,3 @@ keywords = ["card", "cards", "solitaire", "klondike"]
 
 [dependencies]
 arrayvec = "0.7.6"
-rand = { version = "0.10.1", default-features = false, features = ["thread_rng"] }
