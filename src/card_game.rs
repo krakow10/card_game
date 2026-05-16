@@ -182,6 +182,13 @@ impl<const DN: usize, const UP: usize> Pile<DN, UP> {
 	pub fn pop(&mut self) -> Option<Card> {
 		self.face_up.pop()
 	}
+	pub fn pop_flip_up(&mut self) -> Option<Card> {
+		let card = self.face_up.pop()?;
+		if self.face_up.is_empty() {
+			self.flip_up();
+		}
+		Some(card)
+	}
 	pub fn take_range<R: RangeBounds<usize>>(&mut self, range: R) -> Stack<UP> {
 		// if self.face_up.get(range).is_none() {
 		// 	return None;

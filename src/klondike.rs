@@ -365,16 +365,16 @@ impl KlondikeState {
 	fn take_top_card(&mut self, src: KlondikePile) -> Option<Card> {
 		match src {
 			KlondikePile::Tableau(tableau) => match tableau {
-				Tableau::Tableau1 => self.tableau1.pop(),
-				Tableau::Tableau2 => self.tableau2.pop(),
-				Tableau::Tableau3 => self.tableau3.pop(),
-				Tableau::Tableau4 => self.tableau4.pop(),
-				Tableau::Tableau5 => self.tableau5.pop(),
-				Tableau::Tableau6 => self.tableau6.pop(),
-				Tableau::Tableau7 => self.tableau7.pop(),
+				Tableau::Tableau1 => self.tableau1.pop_flip_up(),
+				Tableau::Tableau2 => self.tableau2.pop_flip_up(),
+				Tableau::Tableau3 => self.tableau3.pop_flip_up(),
+				Tableau::Tableau4 => self.tableau4.pop_flip_up(),
+				Tableau::Tableau5 => self.tableau5.pop_flip_up(),
+				Tableau::Tableau6 => self.tableau6.pop_flip_up(),
+				Tableau::Tableau7 => self.tableau7.pop_flip_up(),
 			},
 			KlondikePile::Foundation(foundation) => self.foundations[foundation as usize].pop(),
-			KlondikePile::Stock => self.stock.pop(),
+			KlondikePile::Stock => self.stock.pop_flip_up(),
 		}
 	}
 	fn extend<I: IntoIterator<Item = Card>>(&mut self, dst: KlondikePile, cards: I) {
