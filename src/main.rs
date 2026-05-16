@@ -225,11 +225,25 @@ fn main() -> Result<(), std::io::Error> {
 			}
 			SessionInstruction::Auto => {
 				fn useless_moves(instruction: &KlondikeInstruction) -> bool {
-					// foundation -> foundation is a useless move
 					!matches!(
 						instruction,
+						// foundation -> foundation is a useless move
 						KlondikeInstruction::DstFoundation(DstFoundation {
 							src: KlondikePile::Foundation(_),
+							..
+						})
+						// Tableau -> Tableau when not revealing a new card is _usually_ a useless move
+						| KlondikeInstruction::DstTableau(DstTableau {
+							src: KlondikePileStack::Tableau(TableauStack {
+								skip_cards: SkipCards::Skip1
+									| SkipCards::Skip2 | SkipCards::Skip3
+									| SkipCards::Skip4 | SkipCards::Skip5
+									| SkipCards::Skip6 | SkipCards::Skip7
+									| SkipCards::Skip8 | SkipCards::Skip9
+									| SkipCards::Skip10 | SkipCards::Skip11
+									| SkipCards::Skip12,
+								..
+							}),
 							..
 						})
 					)
