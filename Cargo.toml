@@ -2,6 +2,11 @@
 name = "card_game"
 version = "0.1.0"
 edition = "2024"
+repository = "https://git.aleshym.co/Quaternions/card_game"
+license = "MIT OR Apache-2.0"
+description = "Card game library."
+authors = ["Rhys Lloyd <krakow20@gmail.com>"]
+keywords = ["card", "cards", "solitaire", "klondike"]
 
 [dependencies]
 arrayvec = "0.7.6"
