@@ -224,7 +224,19 @@ fn main() -> Result<(), std::io::Error> {
 				}
 			}
 			SessionInstruction::Auto => {
-				if let Some(instruction) = session.possible_instructions().next() {
+				fn useless_moves(instruction: &KlondikeInstruction) -> bool {
+					// foundation -> foundation is a useless move
+					!matches!(
+						instruction,
+						KlondikeInstruction::DstFoundation(DstFoundation {
+							src: KlondikePile::Foundation(_),
+							..
+						})
+					)
+				}
+				if let Some(instruction) =
+					session.possible_instructions().filter(useless_moves).next()
+				{
 					session.process_instruction(instruction);
 				} else {
 					println!("No valid moves!");
