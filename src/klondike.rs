@@ -154,7 +154,6 @@ pub enum SkipCards {
 	Ten,
 	Eleven,
 	Twelve,
-	Thirteen,
 }
 impl SkipCards {
 	const fn next(self) -> Option<Self> {
@@ -172,8 +171,7 @@ impl SkipCards {
 			Nine => Ten,
 			Ten => Eleven,
 			Eleven => Twelve,
-			Twelve => Thirteen,
-			Thirteen => return None,
+			Twelve => return None,
 		})
 	}
 }
