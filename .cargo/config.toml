@@ -1,0 +1,2 @@
+[registries.Quaternions]
+index = "sparse+https://git.aleshym.co/api/packages/Quaternions/cargo/"
