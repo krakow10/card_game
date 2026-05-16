@@ -9,9 +9,8 @@ impl Default for KlondikeConfig {
 	}
 }
 
-#[repr(u8)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum KlondikePileId {
+pub enum Tableau {
 	Tableau1,
 	Tableau2,
 	Tableau3,
@@ -19,15 +18,11 @@ pub enum KlondikePileId {
 	Tableau5,
 	Tableau6,
 	Tableau7,
-	Foundation1,
-	Foundation2,
-	Foundation3,
-	Foundation4,
-	Stock,
 }
-impl KlondikePileId {
+impl Tableau {
+	const ITER_BEGIN: Self = Self::Tableau1;
 	const fn next(self) -> Option<Self> {
-		use KlondikePileId::*;
+		use Tableau::*;
 		Some(match self {
 			Tableau1 => Tableau2,
 			Tableau2 => Tableau3,
@@ -35,226 +30,225 @@ impl KlondikePileId {
 			Tableau4 => Tableau5,
 			Tableau5 => Tableau6,
 			Tableau6 => Tableau7,
-			Tableau7 => Foundation1,
-			Foundation1 => Foundation2,
-			Foundation2 => Foundation3,
-			Foundation3 => Foundation4,
-			Foundation4 => Stock,
-			Stock => return None,
+			Tableau7 => return None,
 		})
 	}
 }
 
-/// high four bits for stack depth, low four bits for Pile Id
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct InstructionSrc(u8);
-impl InstructionSrc {
-	const STOCK: Self = InstructionSrc::new(KlondikePileStack::Stock);
-	pub const fn new(src: KlondikePileStack) -> Self {
-		match src {
-			KlondikePileStack::Tableau1(skip_cards) => {
-				Self(KlondikePileId::Tableau1 as u8 + ((skip_cards as u8) << 4))
-			}
-			KlondikePileStack::Tableau2(skip_cards) => {
-				Self(KlondikePileId::Tableau2 as u8 + ((skip_cards as u8) << 4))
-			}
-			KlondikePileStack::Tableau3(skip_cards) => {
-				Self(KlondikePileId::Tableau3 as u8 + ((skip_cards as u8) << 4))
-			}
-			KlondikePileStack::Tableau4(skip_cards) => {
-				Self(KlondikePileId::Tableau4 as u8 + ((skip_cards as u8) << 4))
-			}
-			KlondikePileStack::Tableau5(skip_cards) => {
-				Self(KlondikePileId::Tableau5 as u8 + ((skip_cards as u8) << 4))
-			}
-			KlondikePileStack::Tableau6(skip_cards) => {
-				Self(KlondikePileId::Tableau6 as u8 + ((skip_cards as u8) << 4))
-			}
-			KlondikePileStack::Tableau7(skip_cards) => {
-				Self(KlondikePileId::Tableau7 as u8 + ((skip_cards as u8) << 4))
-			}
-			KlondikePileStack::Foundation1 => Self(KlondikePileId::Foundation1 as u8),
-			KlondikePileStack::Foundation2 => Self(KlondikePileId::Foundation2 as u8),
-			KlondikePileStack::Foundation3 => Self(KlondikePileId::Foundation3 as u8),
-			KlondikePileStack::Foundation4 => Self(KlondikePileId::Foundation4 as u8),
-			KlondikePileStack::Stock => Self(KlondikePileId::Stock as u8),
-		}
-	}
-	const fn into_spec(self) -> KlondikePileStack {
-		// SAFETY: there is no way to construct an invalid InstructionSrc
-		let pile = unsafe { core::mem::transmute(self.0 & 0b1111) };
-		match pile {
-			KlondikePileId::Tableau1 => {
-				KlondikePileStack::Tableau1(unsafe { core::mem::transmute(self.0 >> 4) })
-			}
-			KlondikePileId::Tableau2 => {
-				KlondikePileStack::Tableau2(unsafe { core::mem::transmute(self.0 >> 4) })
-			}
-			KlondikePileId::Tableau3 => {
-				KlondikePileStack::Tableau3(unsafe { core::mem::transmute(self.0 >> 4) })
-			}
-			KlondikePileId::Tableau4 => {
-				KlondikePileStack::Tableau4(unsafe { core::mem::transmute(self.0 >> 4) })
-			}
-			KlondikePileId::Tableau5 => {
-				KlondikePileStack::Tableau5(unsafe { core::mem::transmute(self.0 >> 4) })
-			}
-			KlondikePileId::Tableau6 => {
-				KlondikePileStack::Tableau6(unsafe { core::mem::transmute(self.0 >> 4) })
-			}
-			KlondikePileId::Tableau7 => {
-				KlondikePileStack::Tableau7(unsafe { core::mem::transmute(self.0 >> 4) })
-			}
-			KlondikePileId::Foundation1 => KlondikePileStack::Foundation1,
-			KlondikePileId::Foundation2 => KlondikePileStack::Foundation2,
-			KlondikePileId::Foundation3 => KlondikePileStack::Foundation3,
-			KlondikePileId::Foundation4 => KlondikePileStack::Foundation4,
-			KlondikePileId::Stock => KlondikePileStack::Stock,
-		}
-	}
+pub enum Foundation {
+	Foundation1,
+	Foundation2,
+	Foundation3,
+	Foundation4,
+}
+impl Foundation {
+	const ITER_BEGIN: Self = Self::Foundation1;
 	const fn next(self) -> Option<Self> {
-		match self.into_spec().next() {
-			Some(s) => Some(Self::new(s)),
-			None => None,
-		}
+		use Foundation::*;
+		Some(match self {
+			Foundation1 => Foundation2,
+			Foundation2 => Foundation3,
+			Foundation3 => Foundation4,
+			Foundation4 => return None,
+		})
 	}
 }
-impl From<InstructionSrc> for KlondikePileId {
-	fn from(value: InstructionSrc) -> Self {
-		match value.into_spec() {
-			KlondikePileStack::Tableau1(_) => KlondikePileId::Tableau1,
-			KlondikePileStack::Tableau2(_) => KlondikePileId::Tableau2,
-			KlondikePileStack::Tableau3(_) => KlondikePileId::Tableau3,
-			KlondikePileStack::Tableau4(_) => KlondikePileId::Tableau4,
-			KlondikePileStack::Tableau5(_) => KlondikePileId::Tableau5,
-			KlondikePileStack::Tableau6(_) => KlondikePileId::Tableau6,
-			KlondikePileStack::Tableau7(_) => KlondikePileId::Tableau7,
-			KlondikePileStack::Foundation1 => KlondikePileId::Foundation1,
-			KlondikePileStack::Foundation2 => KlondikePileId::Foundation2,
-			KlondikePileStack::Foundation3 => KlondikePileId::Foundation3,
-			KlondikePileStack::Foundation4 => KlondikePileId::Foundation4,
-			KlondikePileStack::Stock => KlondikePileId::Stock,
-		}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum KlondikePile {
+	Tableau(Tableau),
+	Stock,
+	Foundation(Foundation),
+}
+impl KlondikePile {
+	const ITER_BEGIN: Self = Self::Tableau(Tableau::ITER_BEGIN);
+	const fn next(self) -> Option<Self> {
+		Some(match self {
+			Self::Tableau(tableau_stack) => match tableau_stack.next() {
+				Some(tableau_stack) => Self::Tableau(tableau_stack),
+				None => Self::Stock,
+			},
+			Self::Stock => Self::Foundation(Foundation::ITER_BEGIN),
+			Self::Foundation(foundation) => match foundation.next() {
+				Some(foundation) => Self::Foundation(foundation),
+				None => return None,
+			},
+		})
+	}
+}
+impl From<Tableau> for KlondikePile {
+	fn from(value: Tableau) -> Self {
+		KlondikePile::Tableau(value)
+	}
+}
+impl From<Foundation> for KlondikePile {
+	fn from(value: Foundation) -> Self {
+		KlondikePile::Foundation(value)
 	}
 }
 
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SkipCards {
-	Zero,
-	One,
-	Two,
-	Three,
-	Four,
-	Five,
-	Six,
-	Seven,
-	Eight,
-	Nine,
-	Ten,
-	Eleven,
-	Twelve,
+	Skip0,
+	Skip1,
+	Skip2,
+	Skip3,
+	Skip4,
+	Skip5,
+	Skip6,
+	Skip7,
+	Skip8,
+	Skip9,
+	Skip10,
+	Skip11,
+	Skip12,
 }
 impl SkipCards {
+	const ITER_BEGIN: Self = Self::Skip0;
 	const fn next(self) -> Option<Self> {
 		use SkipCards::*;
 		Some(match self {
-			Zero => One,
-			One => Two,
-			Two => Three,
-			Three => Four,
-			Four => Five,
-			Five => Six,
-			Six => Seven,
-			Seven => Eight,
-			Eight => Nine,
-			Nine => Ten,
-			Ten => Eleven,
-			Eleven => Twelve,
-			Twelve => return None,
-		})
-	}
-}
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum KlondikePileStack {
-	Tableau1(SkipCards),
-	Tableau2(SkipCards),
-	Tableau3(SkipCards),
-	Tableau4(SkipCards),
-	Tableau5(SkipCards),
-	Tableau6(SkipCards),
-	Tableau7(SkipCards),
-	Foundation1,
-	Foundation2,
-	Foundation3,
-	Foundation4,
-	Stock,
-}
-impl KlondikePileStack {
-	const fn next(self) -> Option<Self> {
-		use KlondikePileStack::*;
-		Some(match self {
-			Tableau1(skip) => match skip.next() {
-				Some(next) => Tableau1(next),
-				None => Tableau2(SkipCards::Zero),
-			},
-			Tableau2(skip) => match skip.next() {
-				Some(next) => Tableau2(next),
-				None => Tableau3(SkipCards::Zero),
-			},
-			Tableau3(skip) => match skip.next() {
-				Some(next) => Tableau3(next),
-				None => Tableau4(SkipCards::Zero),
-			},
-			Tableau4(skip) => match skip.next() {
-				Some(next) => Tableau4(next),
-				None => Tableau5(SkipCards::Zero),
-			},
-			Tableau5(skip) => match skip.next() {
-				Some(next) => Tableau5(next),
-				None => Tableau6(SkipCards::Zero),
-			},
-			Tableau6(skip) => match skip.next() {
-				Some(next) => Tableau6(next),
-				None => Tableau7(SkipCards::Zero),
-			},
-			Tableau7(skip) => match skip.next() {
-				Some(next) => Tableau7(next),
-				None => Foundation1,
-			},
-			Foundation1 => Foundation2,
-			Foundation2 => Foundation3,
-			Foundation3 => Foundation4,
-			Foundation4 => Stock,
-			Stock => return None,
+			Skip0 => Skip1,
+			Skip1 => Skip2,
+			Skip2 => Skip3,
+			Skip3 => Skip4,
+			Skip4 => Skip5,
+			Skip5 => Skip6,
+			Skip6 => Skip7,
+			Skip7 => Skip8,
+			Skip8 => Skip9,
+			Skip9 => Skip10,
+			Skip10 => Skip11,
+			Skip11 => Skip12,
+			Skip12 => return None,
 		})
 	}
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct KlondikeInstruction {
-	pub src: InstructionSrc,
-	pub dst: KlondikePileId,
+pub struct TableauStack {
+	pub tableau: Tableau,
+	pub skip_cards: SkipCards,
 }
-impl KlondikeInstruction {
-	pub const fn stock() -> Self {
-		Self {
-			src: InstructionSrc::STOCK,
-			dst: KlondikePileId::Stock,
-		}
-	}
+
+impl TableauStack {
+	const ITER_BEGIN: Self = Self {
+		tableau: Tableau::ITER_BEGIN,
+		skip_cards: SkipCards::ITER_BEGIN,
+	};
 	const fn next(self) -> Option<Self> {
-		let KlondikeInstruction { src, dst } = self;
-		if let Some(next_dst) = dst.next() {
-			return Some(Self { src, dst: next_dst });
-		}
-		if let Some(next_src) = src.next() {
+		let TableauStack {
+			tableau,
+			skip_cards,
+		} = self;
+		if let Some(skip_cards) = skip_cards.next() {
 			return Some(Self {
-				src: next_src,
-				dst: KlondikePileId::Tableau1,
+				tableau,
+				skip_cards,
+			});
+		}
+		if let Some(tableau) = tableau.next() {
+			let skip_cards = SkipCards::Skip0;
+			return Some(Self {
+				tableau,
+				skip_cards,
 			});
 		}
 		None
+	}
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum KlondikePileStack {
+	Tableau(TableauStack),
+	Stock,
+	Foundation(Foundation),
+}
+impl KlondikePileStack {
+	const ITER_BEGIN: Self = Self::Tableau(TableauStack::ITER_BEGIN);
+	const fn next(self) -> Option<Self> {
+		Some(match self {
+			Self::Tableau(tableau_stack) => match tableau_stack.next() {
+				Some(tableau_stack) => Self::Tableau(tableau_stack),
+				None => Self::Stock,
+			},
+			Self::Stock => Self::Foundation(Foundation::ITER_BEGIN),
+			Self::Foundation(foundation) => match foundation.next() {
+				Some(foundation) => Self::Foundation(foundation),
+				None => return None,
+			},
+		})
+	}
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct DstFoundation {
+	pub src: KlondikePile,
+	pub foundation: Foundation,
+}
+impl DstFoundation {
+	const ITER_BEGIN: Self = Self {
+		src: KlondikePile::ITER_BEGIN,
+		foundation: Foundation::ITER_BEGIN,
+	};
+	const fn next(self) -> Option<Self> {
+		let DstFoundation { src, foundation } = self;
+		if let Some(src) = src.next() {
+			return Some(Self { src, foundation });
+		}
+		if let Some(foundation) = foundation.next() {
+			let src = KlondikePile::ITER_BEGIN;
+			return Some(Self { src, foundation });
+		}
+		None
+	}
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct DstTableau {
+	pub src: KlondikePileStack,
+	pub tableau: Tableau,
+}
+impl DstTableau {
+	const ITER_BEGIN: Self = Self {
+		src: KlondikePileStack::ITER_BEGIN,
+		tableau: Tableau::ITER_BEGIN,
+	};
+	const fn next(self) -> Option<Self> {
+		let DstTableau { src, tableau } = self;
+		if let Some(src) = src.next() {
+			return Some(Self { src, tableau });
+		}
+		if let Some(tableau) = tableau.next() {
+			let src = KlondikePileStack::ITER_BEGIN;
+			return Some(Self { src, tableau });
+		}
+		None
+	}
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum KlondikeInstruction {
+	DstFoundation(DstFoundation),
+	DstTableau(DstTableau),
+	RotateStock,
+}
+impl KlondikeInstruction {
+	const ITER_BEGIN: Self = Self::DstFoundation(DstFoundation::ITER_BEGIN);
+	const fn next(self) -> Option<Self> {
+		Some(match self {
+			Self::DstFoundation(dst_foundation) => match dst_foundation.next() {
+				Some(dst_foundation) => Self::DstFoundation(dst_foundation),
+				None => Self::DstTableau(DstTableau::ITER_BEGIN),
+			},
+			Self::DstTableau(tableau) => match tableau.next() {
+				Some(tableau) => Self::DstTableau(tableau),
+				None => Self::RotateStock,
+			},
+			Self::RotateStock => return None,
+		})
 	}
 }
 
@@ -313,128 +307,106 @@ impl KlondikeState {
 	pub const fn tableau7(&self) -> &Pile<6, 13> {
 		&self.tableau7
 	}
-	fn src_card(&self, src: InstructionSrc) -> Option<&Card> {
-		match src.into_spec() {
-			KlondikePileStack::Tableau1(skip_cards) => {
-				self.tableau1.face_up().get(skip_cards as usize)
+	fn card(&self, src: KlondikePileStack) -> Option<&Card> {
+		match src {
+			KlondikePileStack::Tableau(TableauStack {
+				tableau,
+				skip_cards,
+			}) => match tableau {
+				Tableau::Tableau1 => self.tableau1.face_up().get(skip_cards as usize),
+				Tableau::Tableau2 => self.tableau2.face_up().get(skip_cards as usize),
+				Tableau::Tableau3 => self.tableau3.face_up().get(skip_cards as usize),
+				Tableau::Tableau4 => self.tableau4.face_up().get(skip_cards as usize),
+				Tableau::Tableau5 => self.tableau5.face_up().get(skip_cards as usize),
+				Tableau::Tableau6 => self.tableau6.face_up().get(skip_cards as usize),
+				Tableau::Tableau7 => self.tableau7.face_up().get(skip_cards as usize),
+			},
+			KlondikePileStack::Foundation(foundation) => {
+				self.foundations[foundation as usize].last()
 			}
-			KlondikePileStack::Tableau2(skip_cards) => {
-				self.tableau2.face_up().get(skip_cards as usize)
-			}
-			KlondikePileStack::Tableau3(skip_cards) => {
-				self.tableau3.face_up().get(skip_cards as usize)
-			}
-			KlondikePileStack::Tableau4(skip_cards) => {
-				self.tableau4.face_up().get(skip_cards as usize)
-			}
-			KlondikePileStack::Tableau5(skip_cards) => {
-				self.tableau5.face_up().get(skip_cards as usize)
-			}
-			KlondikePileStack::Tableau6(skip_cards) => {
-				self.tableau6.face_up().get(skip_cards as usize)
-			}
-			KlondikePileStack::Tableau7(skip_cards) => {
-				self.tableau7.face_up().get(skip_cards as usize)
-			}
-			KlondikePileStack::Foundation1 => self.foundations[1 - 1].last(),
-			KlondikePileStack::Foundation2 => self.foundations[2 - 1].last(),
-			KlondikePileStack::Foundation3 => self.foundations[3 - 1].last(),
-			KlondikePileStack::Foundation4 => self.foundations[4 - 1].last(),
 			KlondikePileStack::Stock => self.stock.face_up().last(),
 		}
 	}
-	fn take_src_cards(&mut self, src: InstructionSrc) -> Stack<13> {
-		match src.into_spec() {
-			KlondikePileStack::Tableau1(skip_cards) => {
-				self.tableau1.take_range_flip_up(skip_cards as usize..)
+	fn top_card(&self, src: KlondikePile) -> Option<&Card> {
+		match src {
+			KlondikePile::Tableau(tableau) => match tableau {
+				Tableau::Tableau1 => self.tableau1.face_up().last(),
+				Tableau::Tableau2 => self.tableau2.face_up().last(),
+				Tableau::Tableau3 => self.tableau3.face_up().last(),
+				Tableau::Tableau4 => self.tableau4.face_up().last(),
+				Tableau::Tableau5 => self.tableau5.face_up().last(),
+				Tableau::Tableau6 => self.tableau6.face_up().last(),
+				Tableau::Tableau7 => self.tableau7.face_up().last(),
+			},
+			KlondikePile::Foundation(foundation) => self.foundations[foundation as usize].last(),
+			KlondikePile::Stock => self.stock.face_up().last(),
+		}
+	}
+	fn take_cards(&mut self, src: KlondikePileStack) -> Stack<13> {
+		match src {
+			KlondikePileStack::Tableau(TableauStack {
+				tableau,
+				skip_cards,
+			}) => match tableau {
+				Tableau::Tableau1 => self.tableau1.take_range_flip_up(skip_cards as usize..),
+				Tableau::Tableau2 => self.tableau2.take_range_flip_up(skip_cards as usize..),
+				Tableau::Tableau3 => self.tableau3.take_range_flip_up(skip_cards as usize..),
+				Tableau::Tableau4 => self.tableau4.take_range_flip_up(skip_cards as usize..),
+				Tableau::Tableau5 => self.tableau5.take_range_flip_up(skip_cards as usize..),
+				Tableau::Tableau6 => self.tableau6.take_range_flip_up(skip_cards as usize..),
+				Tableau::Tableau7 => self.tableau7.take_range_flip_up(skip_cards as usize..),
+			},
+			KlondikePileStack::Foundation(foundation) => {
+				Stack::from_iter(self.foundations[foundation as usize].pop())
 			}
-			KlondikePileStack::Tableau2(skip_cards) => {
-				self.tableau2.take_range_flip_up(skip_cards as usize..)
-			}
-			KlondikePileStack::Tableau3(skip_cards) => {
-				self.tableau3.take_range_flip_up(skip_cards as usize..)
-			}
-			KlondikePileStack::Tableau4(skip_cards) => {
-				self.tableau4.take_range_flip_up(skip_cards as usize..)
-			}
-			KlondikePileStack::Tableau5(skip_cards) => {
-				self.tableau5.take_range_flip_up(skip_cards as usize..)
-			}
-			KlondikePileStack::Tableau6(skip_cards) => {
-				self.tableau6.take_range_flip_up(skip_cards as usize..)
-			}
-			KlondikePileStack::Tableau7(skip_cards) => {
-				self.tableau7.take_range_flip_up(skip_cards as usize..)
-			}
-			KlondikePileStack::Foundation1 => Stack::from_iter(self.foundations[1 - 1].pop()),
-			KlondikePileStack::Foundation2 => Stack::from_iter(self.foundations[2 - 1].pop()),
-			KlondikePileStack::Foundation3 => Stack::from_iter(self.foundations[3 - 1].pop()),
-			KlondikePileStack::Foundation4 => Stack::from_iter(self.foundations[4 - 1].pop()),
 			KlondikePileStack::Stock => Stack::from_iter(self.stock.pop()),
 		}
 	}
-	fn dst_card(&self, dst: KlondikePileId) -> Option<&Card> {
-		match dst {
-			KlondikePileId::Tableau1 => self.tableau1.face_up().last(),
-			KlondikePileId::Tableau2 => self.tableau2.face_up().last(),
-			KlondikePileId::Tableau3 => self.tableau3.face_up().last(),
-			KlondikePileId::Tableau4 => self.tableau4.face_up().last(),
-			KlondikePileId::Tableau5 => self.tableau5.face_up().last(),
-			KlondikePileId::Tableau6 => self.tableau6.face_up().last(),
-			KlondikePileId::Tableau7 => self.tableau7.face_up().last(),
-			KlondikePileId::Foundation1 => self.foundations[1 - 1].last(),
-			KlondikePileId::Foundation2 => self.foundations[2 - 1].last(),
-			KlondikePileId::Foundation3 => self.foundations[3 - 1].last(),
-			KlondikePileId::Foundation4 => self.foundations[4 - 1].last(),
-			KlondikePileId::Stock => None,
+	fn take_top_card(&mut self, src: KlondikePile) -> Option<Card> {
+		match src {
+			KlondikePile::Tableau(tableau) => match tableau {
+				Tableau::Tableau1 => self.tableau1.pop(),
+				Tableau::Tableau2 => self.tableau2.pop(),
+				Tableau::Tableau3 => self.tableau3.pop(),
+				Tableau::Tableau4 => self.tableau4.pop(),
+				Tableau::Tableau5 => self.tableau5.pop(),
+				Tableau::Tableau6 => self.tableau6.pop(),
+				Tableau::Tableau7 => self.tableau7.pop(),
+			},
+			KlondikePile::Foundation(foundation) => self.foundations[foundation as usize].pop(),
+			KlondikePile::Stock => self.stock.pop(),
 		}
 	}
-	fn extend_dst_pile(&mut self, dst: KlondikePileId, cards: Stack<13>) {
+	fn extend<I: IntoIterator<Item = Card>>(&mut self, dst: KlondikePile, cards: I) {
 		match dst {
-			KlondikePileId::Tableau1 => self.tableau1.extend(cards),
-			KlondikePileId::Tableau2 => self.tableau2.extend(cards),
-			KlondikePileId::Tableau3 => self.tableau3.extend(cards),
-			KlondikePileId::Tableau4 => self.tableau4.extend(cards),
-			KlondikePileId::Tableau5 => self.tableau5.extend(cards),
-			KlondikePileId::Tableau6 => self.tableau6.extend(cards),
-			KlondikePileId::Tableau7 => self.tableau7.extend(cards),
-			KlondikePileId::Foundation1 => self.foundations[1 - 1].extend(cards),
-			KlondikePileId::Foundation2 => self.foundations[2 - 1].extend(cards),
-			KlondikePileId::Foundation3 => self.foundations[3 - 1].extend(cards),
-			KlondikePileId::Foundation4 => self.foundations[4 - 1].extend(cards),
-			KlondikePileId::Stock => (),
+			KlondikePile::Tableau(tableau) => match tableau {
+				Tableau::Tableau1 => self.tableau1.extend(cards),
+				Tableau::Tableau2 => self.tableau2.extend(cards),
+				Tableau::Tableau3 => self.tableau3.extend(cards),
+				Tableau::Tableau4 => self.tableau4.extend(cards),
+				Tableau::Tableau5 => self.tableau5.extend(cards),
+				Tableau::Tableau6 => self.tableau6.extend(cards),
+				Tableau::Tableau7 => self.tableau7.extend(cards),
+			},
+			KlondikePile::Foundation(foundation) => {
+				self.foundations[foundation as usize].extend(cards)
+			}
+			KlondikePile::Stock => self.stock.extend(cards),
 		}
 	}
 	fn is_instruction_valid(&self, instruction: KlondikeInstruction) -> bool {
 		match instruction {
 			// Stock -> Stock draws a card or resets the stock
-			KlondikeInstruction {
-				src: InstructionSrc::STOCK,
-				dst: KlondikePileId::Stock,
-			} => {
+			KlondikeInstruction::RotateStock => {
 				// cannot move stock when stock is empty
 				!self.stock.is_empty()
 			}
 
-			// cannot move cards to stock
-			KlondikeInstruction {
-				src: _,
-				dst: KlondikePileId::Stock,
-			} => false,
-
 			// moving to foundation has special rules
-			KlondikeInstruction { src, dst }
-				if matches!(
-					dst,
-					KlondikePileId::Foundation1
-						| KlondikePileId::Foundation2
-						| KlondikePileId::Foundation3
-						| KlondikePileId::Foundation4
-				) =>
-			{
+			KlondikeInstruction::DstFoundation(dst_foundation) => {
 				// get the top cards
-				if let Some(src_card) = self.src_card(src) {
-					match self.dst_card(dst) {
+				if let Some(src_card) = self.top_card(dst_foundation.src) {
+					match self.top_card(dst_foundation.foundation.into()) {
 						// destination card exists
 						Some(dst_card) => {
 							// suit matches?
@@ -450,10 +422,10 @@ impl KlondikeState {
 				}
 			}
 			// other = move to tableau
-			KlondikeInstruction { src, dst } => {
-				// get the top cards
-				if let Some(src_card) = self.src_card(src) {
-					match self.dst_card(dst) {
+			KlondikeInstruction::DstTableau(dst_tableau) => {
+				// get the cards
+				if let Some(src_card) = self.card(dst_tableau.src) {
+					match self.top_card(dst_tableau.tableau.into()) {
 						// destination card exists
 						Some(dst_card) => {
 							// red-ness is opposite?
@@ -478,10 +450,7 @@ pub struct KlondikeIter {
 impl KlondikeIter {
 	const fn new() -> Self {
 		Self {
-			instruction: Some(KlondikeInstruction {
-				src: InstructionSrc::new(KlondikePileStack::Tableau1(SkipCards::Zero)),
-				dst: KlondikePileId::Tableau2,
-			}),
+			instruction: Some(KlondikeInstruction::ITER_BEGIN),
 		}
 	}
 }
@@ -558,19 +527,20 @@ impl Game for Klondike {
 	fn process_instruction(&mut self, instruction: Self::Instruction) {
 		match instruction {
 			// Reset the stock if it's empty
-			KlondikeInstruction {
-				src: InstructionSrc::STOCK,
-				dst: KlondikePileId::Stock,
-			} => {
+			KlondikeInstruction::RotateStock => {
 				if self.state.stock.face_down().is_empty() {
 					self.state.stock.flip_it_and_reverse_it();
 				} else {
 					self.state.stock.flip_up();
 				}
 			}
-			KlondikeInstruction { src, dst } => {
-				let cards = self.state.take_src_cards(src);
-				self.state.extend_dst_pile(dst, cards);
+			KlondikeInstruction::DstFoundation(DstFoundation { src, foundation }) => {
+				let cards = self.state.take_top_card(src);
+				self.state.extend(foundation.into(), cards);
+			}
+			KlondikeInstruction::DstTableau(DstTableau { src, tableau }) => {
+				let cards = self.state.take_cards(src);
+				self.state.extend(tableau.into(), cards);
 			}
 		}
 	}

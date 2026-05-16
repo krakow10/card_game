@@ -5,8 +5,8 @@ pub type Rng = rand::rngs::ThreadRng;
 
 use card_game::{Card, Game, Pile, Session, Suit};
 use klondike::{
-	InstructionSrc, Klondike, KlondikeInstruction, KlondikePileId, KlondikePileStack,
-	KlondikeState, SkipCards,
+	DstFoundation, DstTableau, Foundation, Klondike, KlondikeInstruction, KlondikePile,
+	KlondikePileStack, SkipCards, Tableau, TableauStack,
 };
 
 use std::fmt::Display;
@@ -91,8 +91,8 @@ impl Display for Klondike {
 struct Invalid;
 struct Parsed<T>(T);
 struct NaiveInstruction {
-	src: KlondikePileId,
-	dst: KlondikePileId,
+	src: KlondikePile,
+	dst: KlondikePile,
 }
 impl core::str::FromStr for NaiveInstruction {
 	type Err = Invalid;
@@ -102,22 +102,22 @@ impl core::str::FromStr for NaiveInstruction {
 		Ok(NaiveInstruction { src, dst })
 	}
 }
-impl core::str::FromStr for Parsed<KlondikePileId> {
+impl core::str::FromStr for Parsed<KlondikePile> {
 	type Err = Invalid;
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
 		Ok(Parsed(match s {
-			"st" => KlondikePileId::Stock,
-			"t1" => KlondikePileId::Tableau1,
-			"t2" => KlondikePileId::Tableau2,
-			"t3" => KlondikePileId::Tableau3,
-			"t4" => KlondikePileId::Tableau4,
-			"t5" => KlondikePileId::Tableau5,
-			"t6" => KlondikePileId::Tableau6,
-			"t7" => KlondikePileId::Tableau7,
-			"f1" => KlondikePileId::Foundation1,
-			"f2" => KlondikePileId::Foundation2,
-			"f3" => KlondikePileId::Foundation3,
-			"f4" => KlondikePileId::Foundation4,
+			"st" => KlondikePile::Stock,
+			"t1" => KlondikePile::Tableau(Tableau::Tableau1),
+			"t2" => KlondikePile::Tableau(Tableau::Tableau2),
+			"t3" => KlondikePile::Tableau(Tableau::Tableau3),
+			"t4" => KlondikePile::Tableau(Tableau::Tableau4),
+			"t5" => KlondikePile::Tableau(Tableau::Tableau5),
+			"t6" => KlondikePile::Tableau(Tableau::Tableau6),
+			"t7" => KlondikePile::Tableau(Tableau::Tableau7),
+			"f1" => KlondikePile::Foundation(Foundation::Foundation1),
+			"f2" => KlondikePile::Foundation(Foundation::Foundation2),
+			"f3" => KlondikePile::Foundation(Foundation::Foundation3),
+			"f4" => KlondikePile::Foundation(Foundation::Foundation4),
 			_ => return Err(Invalid),
 		}))
 	}
@@ -152,99 +152,48 @@ fn find_valid_instruction(
 	naive_instruction: NaiveInstruction,
 ) -> Option<KlondikeInstruction> {
 	const SKIP_LIST: [SkipCards; 13] = [
-		SkipCards::Zero,
-		SkipCards::One,
-		SkipCards::Two,
-		SkipCards::Three,
-		SkipCards::Four,
-		SkipCards::Five,
-		SkipCards::Six,
-		SkipCards::Seven,
-		SkipCards::Eight,
-		SkipCards::Nine,
-		SkipCards::Ten,
-		SkipCards::Eleven,
-		SkipCards::Twelve,
+		SkipCards::Skip0,
+		SkipCards::Skip1,
+		SkipCards::Skip2,
+		SkipCards::Skip3,
+		SkipCards::Skip4,
+		SkipCards::Skip5,
+		SkipCards::Skip6,
+		SkipCards::Skip7,
+		SkipCards::Skip8,
+		SkipCards::Skip9,
+		SkipCards::Skip10,
+		SkipCards::Skip11,
+		SkipCards::Skip12,
 	];
-	let dst = naive_instruction.dst;
-	let src = match naive_instruction.src {
-		KlondikePileId::Tableau1 => {
-			for skip in SKIP_LIST {
-				let src = InstructionSrc::new(KlondikePileStack::Tableau1(skip));
-				let instruction = KlondikeInstruction { src, dst };
-				if state.is_instruction_valid(instruction) {
-					return Some(instruction);
+	let instruction = match (naive_instruction.dst, naive_instruction.src) {
+		(KlondikePile::Tableau(tableau), src) => {
+			let src = match src {
+				KlondikePile::Tableau(src_tableau) => {
+					for skip_cards in SKIP_LIST {
+						let src = KlondikePileStack::Tableau(TableauStack {
+							tableau: src_tableau,
+							skip_cards,
+						});
+						let instruction =
+							KlondikeInstruction::DstTableau(DstTableau { tableau, src });
+						if state.is_instruction_valid(instruction) {
+							return Some(instruction);
+						}
+					}
+					return None;
 				}
-			}
-			return None;
+				KlondikePile::Stock => KlondikePileStack::Stock,
+				KlondikePile::Foundation(foundation) => KlondikePileStack::Foundation(foundation),
+			};
+			KlondikeInstruction::DstTableau(DstTableau { tableau, src })
 		}
-		KlondikePileId::Tableau2 => {
-			for skip in SKIP_LIST {
-				let src = InstructionSrc::new(KlondikePileStack::Tableau2(skip));
-				let instruction = KlondikeInstruction { src, dst };
-				if state.is_instruction_valid(instruction) {
-					return Some(instruction);
-				}
-			}
-			return None;
+		(KlondikePile::Stock, KlondikePile::Stock) => KlondikeInstruction::RotateStock,
+		(KlondikePile::Foundation(foundation), src) => {
+			KlondikeInstruction::DstFoundation(DstFoundation { foundation, src })
 		}
-		KlondikePileId::Tableau3 => {
-			for skip in SKIP_LIST {
-				let src = InstructionSrc::new(KlondikePileStack::Tableau3(skip));
-				let instruction = KlondikeInstruction { src, dst };
-				if state.is_instruction_valid(instruction) {
-					return Some(instruction);
-				}
-			}
-			return None;
-		}
-		KlondikePileId::Tableau4 => {
-			for skip in SKIP_LIST {
-				let src = InstructionSrc::new(KlondikePileStack::Tableau4(skip));
-				let instruction = KlondikeInstruction { src, dst };
-				if state.is_instruction_valid(instruction) {
-					return Some(instruction);
-				}
-			}
-			return None;
-		}
-		KlondikePileId::Tableau5 => {
-			for skip in SKIP_LIST {
-				let src = InstructionSrc::new(KlondikePileStack::Tableau5(skip));
-				let instruction = KlondikeInstruction { src, dst };
-				if state.is_instruction_valid(instruction) {
-					return Some(instruction);
-				}
-			}
-			return None;
-		}
-		KlondikePileId::Tableau6 => {
-			for skip in SKIP_LIST {
-				let src = InstructionSrc::new(KlondikePileStack::Tableau6(skip));
-				let instruction = KlondikeInstruction { src, dst };
-				if state.is_instruction_valid(instruction) {
-					return Some(instruction);
-				}
-			}
-			return None;
-		}
-		KlondikePileId::Tableau7 => {
-			for skip in SKIP_LIST {
-				let src = InstructionSrc::new(KlondikePileStack::Tableau7(skip));
-				let instruction = KlondikeInstruction { src, dst };
-				if state.is_instruction_valid(instruction) {
-					return Some(instruction);
-				}
-			}
-			return None;
-		}
-		KlondikePileId::Foundation1 => InstructionSrc::new(KlondikePileStack::Foundation1),
-		KlondikePileId::Foundation2 => InstructionSrc::new(KlondikePileStack::Foundation2),
-		KlondikePileId::Foundation3 => InstructionSrc::new(KlondikePileStack::Foundation3),
-		KlondikePileId::Foundation4 => InstructionSrc::new(KlondikePileStack::Foundation4),
-		KlondikePileId::Stock => InstructionSrc::new(KlondikePileStack::Stock),
+		_ => return None,
 	};
-	let instruction = KlondikeInstruction { src, dst };
 	state
 		.is_instruction_valid(instruction)
 		.then_some(instruction)
@@ -281,7 +230,9 @@ fn main() -> Result<(), std::io::Error> {
 					println!("No valid moves!");
 				}
 			}
-			SessionInstruction::Stock => session.process_instruction(KlondikeInstruction::stock()),
+			SessionInstruction::Stock => {
+				session.process_instruction(KlondikeInstruction::RotateStock)
+			}
 			SessionInstruction::Klondike(naive_instruction) => {
 				if let Some(instruction) =
 					find_valid_instruction(session.state(), naive_instruction)
