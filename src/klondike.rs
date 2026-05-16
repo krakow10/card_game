@@ -1,5 +1,5 @@
 use crate::Rng;
-use crate::card_game::{CardValue, Game, Pile, Stack};
+use crate::card_game::{Card, CardValue, Game, Pile, Stack};
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct KlondikeConfig {}
@@ -260,8 +260,6 @@ impl KlondikeInstruction {
 	}
 }
 
-const STOCKS: usize = 1;
-const FOUNDATIONS: usize = 4;
 const TABLEAUS: usize = 7;
 const fn sum(n: usize) -> usize {
 	n * (n + 1) / 2
@@ -269,15 +267,145 @@ const fn sum(n: usize) -> usize {
 const MAX_STACK: usize = 52 - sum(TABLEAUS);
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-struct KlondikeState {
-	piles: [Pile<MAX_STACK>; TABLEAUS + FOUNDATIONS + STOCKS],
+pub struct KlondikeState {
+	stock: Pile<MAX_STACK, MAX_STACK>,
+	foundations: [Stack<13>; 4],
+	tableau1: Pile<0, 13>,
+	tableau2: Pile<1, 13>,
+	tableau3: Pile<2, 13>,
+	tableau4: Pile<3, 13>,
+	tableau5: Pile<4, 13>,
+	tableau6: Pile<5, 13>,
+	tableau7: Pile<6, 13>,
 }
 impl KlondikeState {
-	fn pile(&self, index: KlondikePileId) -> &Pile<MAX_STACK> {
-		&self.piles[index as usize]
+	pub const fn stock(&self) -> &Pile<MAX_STACK, MAX_STACK> {
+		&self.stock
 	}
-	fn pile_mut(&mut self, index: KlondikePileId) -> &mut Pile<MAX_STACK> {
-		&mut self.piles[index as usize]
+	pub const fn foundation1(&self) -> &Stack<13> {
+		&self.foundations[1 - 1]
+	}
+	pub const fn foundation2(&self) -> &Stack<13> {
+		&self.foundations[2 - 1]
+	}
+	pub const fn foundation3(&self) -> &Stack<13> {
+		&self.foundations[3 - 1]
+	}
+	pub const fn foundation4(&self) -> &Stack<13> {
+		&self.foundations[4 - 1]
+	}
+	pub const fn tableau1(&self) -> &Pile<0, 13> {
+		&self.tableau1
+	}
+	pub const fn tableau2(&self) -> &Pile<1, 13> {
+		&self.tableau2
+	}
+	pub const fn tableau3(&self) -> &Pile<2, 13> {
+		&self.tableau3
+	}
+	pub const fn tableau4(&self) -> &Pile<3, 13> {
+		&self.tableau4
+	}
+	pub const fn tableau5(&self) -> &Pile<4, 13> {
+		&self.tableau5
+	}
+	pub const fn tableau6(&self) -> &Pile<5, 13> {
+		&self.tableau6
+	}
+	pub const fn tableau7(&self) -> &Pile<6, 13> {
+		&self.tableau7
+	}
+	fn src_card(&self, src: InstructionSrc) -> Option<&Card> {
+		match src.into_spec() {
+			KlondikePileStack::Tableau1(skip_cards) => {
+				self.tableau1.face_up().get(skip_cards as usize)
+			}
+			KlondikePileStack::Tableau2(skip_cards) => {
+				self.tableau2.face_up().get(skip_cards as usize)
+			}
+			KlondikePileStack::Tableau3(skip_cards) => {
+				self.tableau3.face_up().get(skip_cards as usize)
+			}
+			KlondikePileStack::Tableau4(skip_cards) => {
+				self.tableau4.face_up().get(skip_cards as usize)
+			}
+			KlondikePileStack::Tableau5(skip_cards) => {
+				self.tableau5.face_up().get(skip_cards as usize)
+			}
+			KlondikePileStack::Tableau6(skip_cards) => {
+				self.tableau6.face_up().get(skip_cards as usize)
+			}
+			KlondikePileStack::Tableau7(skip_cards) => {
+				self.tableau7.face_up().get(skip_cards as usize)
+			}
+			KlondikePileStack::Foundation1 => self.foundations[1 - 1].last(),
+			KlondikePileStack::Foundation2 => self.foundations[2 - 1].last(),
+			KlondikePileStack::Foundation3 => self.foundations[3 - 1].last(),
+			KlondikePileStack::Foundation4 => self.foundations[4 - 1].last(),
+			KlondikePileStack::Stock => self.stock.face_up().last(),
+		}
+	}
+	fn take_src_cards(&mut self, src: InstructionSrc) -> Stack<13> {
+		match src.into_spec() {
+			KlondikePileStack::Tableau1(skip_cards) => {
+				self.tableau1.take_range_flip_up(skip_cards as usize..)
+			}
+			KlondikePileStack::Tableau2(skip_cards) => {
+				self.tableau2.take_range_flip_up(skip_cards as usize..)
+			}
+			KlondikePileStack::Tableau3(skip_cards) => {
+				self.tableau3.take_range_flip_up(skip_cards as usize..)
+			}
+			KlondikePileStack::Tableau4(skip_cards) => {
+				self.tableau4.take_range_flip_up(skip_cards as usize..)
+			}
+			KlondikePileStack::Tableau5(skip_cards) => {
+				self.tableau5.take_range_flip_up(skip_cards as usize..)
+			}
+			KlondikePileStack::Tableau6(skip_cards) => {
+				self.tableau6.take_range_flip_up(skip_cards as usize..)
+			}
+			KlondikePileStack::Tableau7(skip_cards) => {
+				self.tableau7.take_range_flip_up(skip_cards as usize..)
+			}
+			KlondikePileStack::Foundation1 => Stack::from_iter(self.foundations[1 - 1].pop()),
+			KlondikePileStack::Foundation2 => Stack::from_iter(self.foundations[2 - 1].pop()),
+			KlondikePileStack::Foundation3 => Stack::from_iter(self.foundations[3 - 1].pop()),
+			KlondikePileStack::Foundation4 => Stack::from_iter(self.foundations[4 - 1].pop()),
+			KlondikePileStack::Stock => Stack::from_iter(self.stock.pop()),
+		}
+	}
+	fn dst_card(&self, dst: KlondikePileId) -> Option<&Card> {
+		match dst {
+			KlondikePileId::Tableau1 => self.tableau1.face_up().last(),
+			KlondikePileId::Tableau2 => self.tableau2.face_up().last(),
+			KlondikePileId::Tableau3 => self.tableau3.face_up().last(),
+			KlondikePileId::Tableau4 => self.tableau4.face_up().last(),
+			KlondikePileId::Tableau5 => self.tableau5.face_up().last(),
+			KlondikePileId::Tableau6 => self.tableau6.face_up().last(),
+			KlondikePileId::Tableau7 => self.tableau7.face_up().last(),
+			KlondikePileId::Foundation1 => self.foundations[1 - 1].last(),
+			KlondikePileId::Foundation2 => self.foundations[2 - 1].last(),
+			KlondikePileId::Foundation3 => self.foundations[3 - 1].last(),
+			KlondikePileId::Foundation4 => self.foundations[4 - 1].last(),
+			KlondikePileId::Stock => None,
+		}
+	}
+	fn extend_dst_pile(&mut self, dst: KlondikePileId, cards: Stack<13>) {
+		match dst {
+			KlondikePileId::Tableau1 => self.tableau1.extend(cards),
+			KlondikePileId::Tableau2 => self.tableau2.extend(cards),
+			KlondikePileId::Tableau3 => self.tableau3.extend(cards),
+			KlondikePileId::Tableau4 => self.tableau4.extend(cards),
+			KlondikePileId::Tableau5 => self.tableau5.extend(cards),
+			KlondikePileId::Tableau6 => self.tableau6.extend(cards),
+			KlondikePileId::Tableau7 => self.tableau7.extend(cards),
+			KlondikePileId::Foundation1 => self.foundations[1 - 1].extend(cards),
+			KlondikePileId::Foundation2 => self.foundations[2 - 1].extend(cards),
+			KlondikePileId::Foundation3 => self.foundations[3 - 1].extend(cards),
+			KlondikePileId::Foundation4 => self.foundations[4 - 1].extend(cards),
+			KlondikePileId::Stock => (),
+		}
 	}
 	fn is_instruction_valid(&self, instruction: KlondikeInstruction) -> bool {
 		match instruction {
@@ -287,7 +415,7 @@ impl KlondikeState {
 				dst: KlondikePileId::Stock,
 			} => {
 				// cannot move stock when stock is empty
-				!self.pile(KlondikePileId::Stock).is_empty()
+				!self.stock.is_empty()
 			}
 
 			// cannot move cards to stock
@@ -307,8 +435,8 @@ impl KlondikeState {
 				) =>
 			{
 				// get the top cards
-				if let Some(src_card) = self.pile(src.into()).face_up().last() {
-					match self.pile(dst).face_up().last() {
+				if let Some(src_card) = self.src_card(src) {
+					match self.dst_card(dst) {
 						// destination card exists
 						Some(dst_card) => {
 							// suit matches?
@@ -326,8 +454,8 @@ impl KlondikeState {
 			// other = move to tableau
 			KlondikeInstruction { src, dst } => {
 				// get the top cards
-				if let Some(src_card) = self.pile(src.into()).face_up().last() {
-					match self.pile(dst).face_up().last() {
+				if let Some(src_card) = self.src_card(src) {
+					match self.dst_card(dst) {
 						// destination card exists
 						Some(dst_card) => {
 							// red-ness is opposite?
@@ -385,41 +513,38 @@ impl Klondike {
 		let mut deck = deck.into_iter();
 
 		// generate tableaus
-		let [t0, t1, t2, t3, t4, t5, t6] = core::array::from_fn(|i| {
-			let stack = arrayvec::ArrayVec::from_iter((&mut deck).take(i)).into();
+		fn pile<const DN: usize>(deck: &mut arrayvec::IntoIter<Card, 52>) -> Pile<DN, 13> {
+			let stack = arrayvec::ArrayVec::from_iter(deck.take(DN)).into();
 			let mut pile = Pile::new_face_down(stack);
 			pile.push(deck.next().unwrap());
 			pile
-		});
+		}
+		let tableau1 = pile(&mut deck);
+		let tableau2 = pile(&mut deck);
+		let tableau3 = pile(&mut deck);
+		let tableau4 = pile(&mut deck);
+		let tableau5 = pile(&mut deck);
+		let tableau6 = pile(&mut deck);
+		let tableau7 = pile(&mut deck);
 
 		// stock is remaining cards
 		let stock = Pile::new_face_down(arrayvec::ArrayVec::from_iter(deck).into());
 
 		let state = KlondikeState {
-			piles: [
-				t0,
-				t1,
-				t2,
-				t3,
-				t4,
-				t5,
-				t6,
-				Pile::new(),
-				Pile::new(),
-				Pile::new(),
-				Pile::new(),
-				stock,
-			],
+			stock,
+			foundations: core::array::from_fn(|_| Stack::new()),
+			tableau1,
+			tableau2,
+			tableau3,
+			tableau4,
+			tableau5,
+			tableau6,
+			tableau7,
 		};
 		Self { config, state }
 	}
-	#[inline]
-	pub fn pile(&self, index: KlondikePileId) -> &Pile<MAX_STACK> {
-		self.state.pile(index)
-	}
-	#[inline]
-	fn pile_mut(&mut self, index: KlondikePileId) -> &mut Pile<MAX_STACK> {
-		self.state.pile_mut(index)
+	pub const fn state(&self) -> &KlondikeState {
+		&self.state
 	}
 }
 
@@ -439,25 +564,27 @@ impl Game for Klondike {
 				src: InstructionSrc::STOCK,
 				dst: KlondikePileId::Stock,
 			} => {
-				if self.pile(KlondikePileId::Stock).face_down().is_empty() {
-					self.pile_mut(KlondikePileId::Stock)
-						.flip_it_and_reverse_it();
+				if self.state.stock.face_down().is_empty() {
+					self.state.stock.flip_it_and_reverse_it();
 				} else {
-					self.pile_mut(KlondikePileId::Stock).flip_up();
+					self.state.stock.flip_up();
 				}
 			}
 			KlondikeInstruction { src, dst } => {
-				if let Some(card) = self.pile_mut(src.into()).pop_flip_up() {
-					self.pile_mut(dst).push(card);
-				} else {
-					println!("Attempted to move from an empty src");
-					dbg!(instruction);
-				}
+				let cards = self.state.take_src_cards(src);
+				self.state.extend_dst_pile(dst, cards);
 			}
 		}
 	}
 	fn is_win(&self) -> bool {
-		// assuming only valid moves, tableau empty and stock empty means win
-		self.state.piles[0..9].iter().all(|pile| pile.is_empty())
+		// all face down cards empty means win
+		self.state.stock.face_down().is_empty()
+			&& self.state.tableau1.face_down().is_empty()
+			&& self.state.tableau2.face_down().is_empty()
+			&& self.state.tableau3.face_down().is_empty()
+			&& self.state.tableau4.face_down().is_empty()
+			&& self.state.tableau5.face_down().is_empty()
+			&& self.state.tableau6.face_down().is_empty()
+			&& self.state.tableau7.face_down().is_empty()
 	}
 }

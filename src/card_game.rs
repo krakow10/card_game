@@ -1,3 +1,5 @@
+use core::ops::RangeBounds;
+
 // TODO: pub struct ValidInstruction<I>(I);
 pub trait Game {
 	type Instruction;
@@ -103,8 +105,11 @@ impl Card {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Stack<const CAP: usize>(arrayvec::ArrayVec<Card, CAP>);
 impl<const CAP: usize> Stack<CAP> {
-	pub fn new() -> Self {
-		Self(arrayvec::ArrayVec::new())
+	pub const fn new() -> Self {
+		Self(arrayvec::ArrayVec::new_const())
+	}
+	pub fn take_range<R: RangeBounds<usize>>(&mut self, range: R) -> Self {
+		Stack::from_iter(self.drain(range))
 	}
 }
 impl Stack<52> {
@@ -122,6 +127,11 @@ impl Stack<52> {
 impl<const CAP: usize> From<arrayvec::ArrayVec<Card, CAP>> for Stack<CAP> {
 	fn from(value: arrayvec::ArrayVec<Card, CAP>) -> Self {
 		Self(value)
+	}
+}
+impl<const CAP: usize> FromIterator<Card> for Stack<CAP> {
+	fn from_iter<T: IntoIterator<Item = Card>>(iter: T) -> Self {
+		Self(arrayvec::ArrayVec::from_iter(iter))
 	}
 }
 impl<const CAP: usize> core::ops::Deref for Stack<CAP> {
@@ -144,29 +154,22 @@ impl<const CAP: usize> IntoIterator for Stack<CAP> {
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct Pile<const CAP: usize> {
-	face_down: Stack<CAP>,
-	face_up: Stack<CAP>,
+pub struct Pile<const DN: usize, const UP: usize> {
+	face_down: Stack<DN>,
+	face_up: Stack<UP>,
 }
-impl<const CAP: usize> Pile<CAP> {
+impl<const DN: usize, const UP: usize> Pile<DN, UP> {
 	pub fn new() -> Self {
 		Self {
 			face_down: Stack::new(),
 			face_up: Stack::new(),
 		}
 	}
-	pub fn new_face_down(stack: Stack<CAP>) -> Self {
+	pub fn new_face_down(stack: Stack<DN>) -> Self {
 		Self {
 			face_down: stack,
 			face_up: Stack::new(),
 		}
-	}
-	pub fn flip_it_and_reverse_it(&mut self) {
-		self.swap_up_down();
-		self.face_down.reverse();
-	}
-	pub fn swap_up_down(&mut self) {
-		core::mem::swap(&mut self.face_up, &mut self.face_down);
 	}
 	pub fn flip_up(&mut self) {
 		if let Some(card) = self.face_down.pop() {
@@ -179,21 +182,39 @@ impl<const CAP: usize> Pile<CAP> {
 	pub fn pop(&mut self) -> Option<Card> {
 		self.face_up.pop()
 	}
-	pub fn pop_flip_up(&mut self) -> Option<Card> {
-		let card = self.pop()?;
+	pub fn take_range<R: RangeBounds<usize>>(&mut self, range: R) -> Stack<UP> {
+		// if self.face_up.get(range).is_none() {
+		// 	return None;
+		// }
+		self.face_up.take_range(range)
+	}
+	pub fn take_range_flip_up<R: RangeBounds<usize>>(&mut self, range: R) -> Stack<UP> {
+		let cards = self.take_range(range);
 		if self.face_up.is_empty() {
 			self.flip_up();
 		}
-		Some(card)
+		cards
 	}
 	pub fn push(&mut self, card: Card) {
 		self.face_up.push(card);
+	}
+	pub fn extend<I: IntoIterator<Item = Card>>(&mut self, cards: I) {
+		self.face_up.extend(cards);
 	}
 	pub fn face_up(&self) -> &[Card] {
 		&self.face_up
 	}
 	pub fn face_down(&self) -> &[Card] {
 		&self.face_down
+	}
+}
+impl<const CAP: usize> Pile<CAP, CAP> {
+	pub fn flip_it_and_reverse_it(&mut self) {
+		self.swap_up_down();
+		self.face_down.reverse();
+	}
+	pub fn swap_up_down(&mut self) {
+		core::mem::swap(&mut self.face_up, &mut self.face_down);
 	}
 }
 

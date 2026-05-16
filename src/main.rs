@@ -3,7 +3,7 @@ mod klondike;
 
 pub type Rng = rand::rngs::ThreadRng;
 
-use card_game::{Card, Game, Session, Suit};
+use card_game::{Card, Game, Pile, Session, Suit};
 use klondike::{
 	InstructionSrc, Klondike, KlondikeInstruction, KlondikePileId, KlondikePileStack, SkipCards,
 };
@@ -41,38 +41,30 @@ impl Display for OptionalCard<'_> {
 impl Display for Klondike {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		// Stock
-		let stock_count = self.pile(KlondikePileId::Stock).face_down().len();
+		let stock_count = self.state().stock().face_down().len();
 		writeln!(f, "Stock: {stock_count}")?;
 
 		// Hand
-		let hand = self.pile(KlondikePileId::Stock).face_up().last();
+		let hand = self.state().stock().face_up().last();
 		writeln!(f, "Hand: {}", OptionalCard(hand))?;
 
 		// Foundations
 		write!(
 			f,
 			"Foundations: {} {} {} {}",
-			OptionalCard(self.pile(KlondikePileId::Foundation1).face_up().last()),
-			OptionalCard(self.pile(KlondikePileId::Foundation2).face_up().last()),
-			OptionalCard(self.pile(KlondikePileId::Foundation3).face_up().last()),
-			OptionalCard(self.pile(KlondikePileId::Foundation4).face_up().last()),
+			OptionalCard(self.state().foundation1().last()),
+			OptionalCard(self.state().foundation2().last()),
+			OptionalCard(self.state().foundation3().last()),
+			OptionalCard(self.state().foundation4().last()),
 		)?;
 		writeln!(f)?;
 
-		for (i, tableau) in [
-			KlondikePileId::Tableau1,
-			KlondikePileId::Tableau2,
-			KlondikePileId::Tableau3,
-			KlondikePileId::Tableau4,
-			KlondikePileId::Tableau5,
-			KlondikePileId::Tableau6,
-			KlondikePileId::Tableau7,
-		]
-		.into_iter()
-		.enumerate()
-		{
-			write!(f, "T{} ", i + 1)?;
-			let pile = self.pile(tableau);
+		fn write_pile<const DN: usize, const UP: usize>(
+			f: &mut std::fmt::Formatter<'_>,
+			pile: &Pile<DN, UP>,
+			pile_id: usize,
+		) -> std::fmt::Result {
+			write!(f, "T{} ", pile_id)?;
 			for _ in pile.face_down() {
 				write!(f, "]")?;
 			}
@@ -80,7 +72,15 @@ impl Display for Klondike {
 				write!(f, "{card}")?;
 			}
 			writeln!(f)?;
+			Ok(())
 		}
+		write_pile(f, self.state().tableau1(), 1)?;
+		write_pile(f, self.state().tableau2(), 2)?;
+		write_pile(f, self.state().tableau3(), 3)?;
+		write_pile(f, self.state().tableau4(), 4)?;
+		write_pile(f, self.state().tableau5(), 5)?;
+		write_pile(f, self.state().tableau6(), 6)?;
+		write_pile(f, self.state().tableau7(), 7)?;
 
 		Ok(())
 	}
