@@ -342,7 +342,7 @@ impl KlondikeState {
 			KlondikePile::Stock => self.stock.face_up().last(),
 		}
 	}
-	fn take_cards(&mut self, src: KlondikePileStack) -> Stack<13> {
+	fn take_stack(&mut self, src: KlondikePileStack) -> Stack<13> {
 		match src {
 			KlondikePileStack::Tableau(TableauStack {
 				tableau,
@@ -539,7 +539,7 @@ impl Game for Klondike {
 				self.state.extend(foundation.into(), cards);
 			}
 			KlondikeInstruction::DstTableau(DstTableau { src, tableau }) => {
-				let cards = self.state.take_cards(src);
+				let cards = self.state.take_stack(src);
 				self.state.extend(tableau.into(), cards);
 			}
 		}
