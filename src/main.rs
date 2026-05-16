@@ -244,7 +244,10 @@ fn find_valid_instruction(
 		KlondikePileId::Foundation4 => InstructionSrc::new(KlondikePileStack::Foundation4),
 		KlondikePileId::Stock => InstructionSrc::new(KlondikePileStack::Stock),
 	};
-	return Some(KlondikeInstruction { src, dst });
+	let instruction = KlondikeInstruction { src, dst };
+	state
+		.is_instruction_valid(instruction)
+		.then_some(instruction)
 }
 
 fn main() -> Result<(), std::io::Error> {
