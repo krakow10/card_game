@@ -2,10 +2,17 @@ use core::ops::RangeBounds;
 
 // TODO: pub struct ValidInstruction<I>(I);
 pub trait Game {
+	type Stats;
+	type Config;
 	type Instruction;
 	fn possible_instructions(&self) -> impl Iterator<Item = Self::Instruction> + use<Self>;
-	fn is_instruction_valid(&self, instruction: Self::Instruction) -> bool;
-	fn process_instruction(&mut self, instruction: Self::Instruction);
+	fn is_instruction_valid(&self, config: &Self::Config, instruction: Self::Instruction) -> bool;
+	fn process_instruction(
+		&mut self,
+		stats: &mut Self::Stats,
+		config: &Self::Config,
+		instruction: Self::Instruction,
+	);
 	fn is_win(&self) -> bool;
 }
 
@@ -225,28 +232,102 @@ impl<const CAP: usize> Pile<CAP, CAP> {
 	}
 }
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug)]
+pub enum SessionInstruction<I> {
+	Undo,
+	InnerInstruction(I),
+}
+
+#[derive(Clone, Debug)]
+pub struct SessionStats<S> {
+	inner_stats: S,
+	undos: usize,
+}
+impl<S> SessionStats<S> {
+	const fn new(inner_stats: S) -> Self {
+		SessionStats {
+			inner_stats,
+			undos: 0,
+		}
+	}
+	pub const fn stats(&self) -> &S {
+		&self.inner_stats
+	}
+	const fn increment_undos(&mut self) {
+		self.undos += 1;
+	}
+	pub const fn undos(&self) -> usize {
+		self.undos
+	}
+}
+
 pub struct Session<G: Game> {
+	stats: SessionStats<G::Stats>,
+	config: G::Config,
+	state: SessionState<G>,
+}
+#[derive(Clone, Eq, Hash, PartialEq)]
+pub struct SessionState<G: Game> {
 	seed: G,
 	state: G,
 	history: Vec<G::Instruction>,
 }
-impl<G: Game + Clone + Eq + core::hash::Hash> Session<G>
-where
-	G::Instruction: Clone + Eq + core::hash::Hash,
-{
-	pub fn new(state: G) -> Self {
+impl<G: Game + Clone> SessionState<G> {
+	fn new(state: G) -> Self {
 		Self {
 			seed: state.clone(),
 			state,
 			history: Vec::new(),
 		}
 	}
-	pub fn state(&self) -> &G {
-		&self.state
+}
+impl<G: Game> Session<G>
+where
+	G: Clone + Eq + core::hash::Hash,
+	G::Stats: Clone + Default,
+	G::Instruction: Clone + Eq + core::hash::Hash,
+{
+	pub fn new(state: G, stats: G::Stats, config: G::Config) -> Self {
+		Self {
+			stats: SessionStats::new(stats),
+			config,
+			state: SessionState::new(state),
+		}
+	}
+	pub fn new_default(state: G) -> Self
+	where
+		G::Config: Default,
+	{
+		Self::new(state, Default::default(), Default::default())
+	}
+	pub const fn stats(&self) -> &SessionStats<G::Stats> {
+		&self.stats
+	}
+	pub const fn state(&self) -> &G {
+		&self.state.state
+	}
+	pub const fn config(&self) -> &G::Config {
+		&self.config
 	}
 	pub fn history(&self) -> &[G::Instruction] {
-		&self.history
+		&self.state.history
+	}
+	pub fn undo(&mut self) {
+		self.state
+			.process_instruction(&mut self.stats, &self.config, SessionInstruction::Undo)
+	}
+	pub fn possible_instructions(&self) -> impl Iterator<Item = G::Instruction> + use<G> {
+		self.state.state.possible_instructions()
+	}
+	pub fn process_instruction(&mut self, instruction: G::Instruction) {
+		self.state.process_instruction(
+			&mut self.stats,
+			&self.config,
+			SessionInstruction::InnerInstruction(instruction),
+		)
+	}
+	pub fn is_win(&self) -> bool {
+		self.state.is_win()
 	}
 	pub fn is_winnable(&self) -> Option<Vec<G::Instruction>> {
 		let mut observed = std::collections::HashSet::new();
@@ -255,14 +336,15 @@ where
 			possible_instructions_iter: P,
 			instruction: I,
 		}
-		let mut state = self.state.clone();
+		let mut dummy_stats = self.stats.inner_stats.clone();
+		let mut state = self.state.state.clone();
 		let mut it = state.possible_instructions();
 		let mut path = Vec::new();
 		'outer: while !state.is_win() {
 			observed.insert(state.clone());
 			for instruction in &mut it {
 				let mut next_state = state.clone();
-				next_state.process_instruction(instruction.clone());
+				next_state.process_instruction(&mut dummy_stats, &self.config, instruction.clone());
 				if !observed.contains(&next_state) {
 					let possible_instructions_iter =
 						core::mem::replace(&mut it, next_state.possible_instructions());
@@ -283,30 +365,54 @@ where
 		}
 		Some(path.into_iter().map(|state| state.instruction).collect())
 	}
-	pub fn undo(&mut self) {
-		// replay the entire history of the game except one move
-		self.history.pop();
-		let mut state = self.seed.clone();
-		for instruction in self.history() {
-			state.process_instruction(instruction.clone());
-		}
-		self.state = state;
-	}
 }
-impl<G: Game> Game for Session<G>
+impl<G: Game> Game for SessionState<G>
 where
+	G: Clone,
+	G::Stats: Default,
 	G::Instruction: Clone,
 {
-	type Instruction = G::Instruction;
+	type Stats = SessionStats<G::Stats>;
+	type Config = G::Config;
+	type Instruction = SessionInstruction<G::Instruction>;
 	fn possible_instructions(&self) -> impl Iterator<Item = Self::Instruction> + use<G> {
-		self.state.possible_instructions()
+		self.state
+			.possible_instructions()
+			.map(SessionInstruction::InnerInstruction)
 	}
-	fn is_instruction_valid(&self, instruction: Self::Instruction) -> bool {
-		self.state.is_instruction_valid(instruction)
+	fn is_instruction_valid(&self, config: &Self::Config, instruction: Self::Instruction) -> bool {
+		match instruction {
+			SessionInstruction::Undo => !self.history.is_empty(),
+			SessionInstruction::InnerInstruction(instruction) => {
+				self.state.is_instruction_valid(config, instruction)
+			}
+		}
 	}
-	fn process_instruction(&mut self, instruction: Self::Instruction) {
-		self.history.push(instruction.clone());
-		self.state.process_instruction(instruction);
+	fn process_instruction(
+		&mut self,
+		stats: &mut Self::Stats,
+		config: &Self::Config,
+		instruction: Self::Instruction,
+	) {
+		match instruction {
+			SessionInstruction::Undo => {
+				// replay the entire history of the game except one move
+				self.history.pop();
+				let mut inner_stats = G::Stats::default();
+				let mut state = self.seed.clone();
+				for instruction in &self.history {
+					state.process_instruction(&mut inner_stats, config, instruction.clone());
+				}
+				self.state = state;
+				stats.inner_stats = inner_stats;
+				stats.increment_undos();
+			}
+			SessionInstruction::InnerInstruction(instruction) => {
+				self.history.push(instruction.clone());
+				self.state
+					.process_instruction(&mut stats.inner_stats, config, instruction);
+			}
+		}
 	}
 	fn is_win(&self) -> bool {
 		self.state.is_win()

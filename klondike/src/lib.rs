@@ -10,11 +10,53 @@ mod test;
 #[cfg(doctest)]
 struct ReadmeDoctests;
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct KlondikeConfig {}
-impl Default for KlondikeConfig {
-	fn default() -> Self {
-		KlondikeConfig {}
+#[derive(Clone, Copy, Debug, Default)]
+enum DrawStockConfig {
+	#[default]
+	DrawOne = 1,
+	DrawThree = 3,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct KlondikeConfig {
+	draw_stock: DrawStockConfig,
+}
+impl KlondikeConfig {
+	pub const fn draw_one_stock() -> Self {
+		KlondikeConfig {
+			draw_stock: DrawStockConfig::DrawOne,
+		}
+	}
+	pub const fn draw_three_stock() -> Self {
+		KlondikeConfig {
+			draw_stock: DrawStockConfig::DrawThree,
+		}
+	}
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct KlondikeStats {
+	recycle_count: usize,
+	moves: usize,
+}
+impl KlondikeStats {
+	pub const fn new() -> Self {
+		KlondikeStats {
+			recycle_count: 0,
+			moves: 0,
+		}
+	}
+	pub const fn recycle_count(&self) -> usize {
+		self.recycle_count
+	}
+	pub const fn moves(&self) -> usize {
+		self.moves
+	}
+	const fn increment_recycle_count(&mut self) {
+		self.recycle_count += 1;
+	}
+	const fn increment_moves(&mut self) {
+		self.moves += 1;
 	}
 }
 
@@ -486,14 +528,13 @@ impl Iterator for KlondikeIter {
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Klondike {
-	config: KlondikeConfig,
 	state: KlondikeState,
 }
 impl Klondike {
-	pub fn new_random_default() -> Self {
-		Self::new(Rng::default(), KlondikeConfig::default())
+	pub fn new_random() -> Self {
+		Self::new(Rng::default())
 	}
-	pub fn new(mut seed: Rng, config: KlondikeConfig) -> Self {
+	pub fn new(mut seed: Rng) -> Self {
 		// shuffle a new deck
 		let mut deck = Stack::full_deck(0);
 		use rand::seq::SliceRandom;
@@ -529,7 +570,7 @@ impl Klondike {
 			tableau6,
 			tableau7,
 		};
-		Self { config, state }
+		Self { state }
 	}
 	pub const fn state(&self) -> &KlondikeState {
 		&self.state
@@ -537,22 +578,33 @@ impl Klondike {
 }
 
 impl Game for Klondike {
+	type Stats = KlondikeStats;
+	type Config = KlondikeConfig;
 	type Instruction = KlondikeInstruction;
 	fn possible_instructions(&self) -> impl Iterator<Item = Self::Instruction> + use<> {
 		let state = self.state.clone();
 		KlondikeIter::new().filter(move |&instruction| state.is_instruction_valid(instruction))
 	}
-	fn is_instruction_valid(&self, instruction: Self::Instruction) -> bool {
+	fn is_instruction_valid(&self, _config: &Self::Config, instruction: Self::Instruction) -> bool {
 		self.state.is_instruction_valid(instruction)
 	}
-	fn process_instruction(&mut self, instruction: Self::Instruction) {
+	fn process_instruction(
+		&mut self,
+		stats: &mut Self::Stats,
+		config: &Self::Config,
+		instruction: Self::Instruction,
+	) {
+		stats.increment_moves();
 		match instruction {
 			// Reset the stock if it's empty
 			KlondikeInstruction::RotateStock => {
 				if self.state.stock.face_down().is_empty() {
 					self.state.stock.flip_it_and_reverse_it();
+					stats.increment_recycle_count();
 				} else {
-					self.state.stock.flip_up();
+					for _ in 0..config.draw_stock as usize {
+						self.state.stock.flip_up();
+					}
 				}
 			}
 			// Move a card from anywhere to a foundation

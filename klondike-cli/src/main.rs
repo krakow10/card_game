@@ -1,7 +1,7 @@
-use card_game::{Card, CardValue, Game, Pile, Session, Suit};
+use card_game::{Card, CardValue, Game, Pile, Session, SessionStats, Suit};
 use klondike::{
-	DstFoundation, DstTableau, Foundation, Klondike, KlondikeInstruction, KlondikePile,
-	KlondikePileStack, SkipCards, Tableau, TableauStack,
+	DstFoundation, DstTableau, Foundation, Klondike, KlondikeConfig, KlondikeInstruction,
+	KlondikePile, KlondikePileStack, KlondikeStats, SkipCards, Tableau, TableauStack,
 };
 
 use std::fmt::Display;
@@ -83,6 +83,18 @@ impl Display for Displayed<&Klondike> {
 	}
 }
 
+impl Display for Displayed<&SessionStats<KlondikeStats>> {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		write!(
+			f,
+			"recycles: {} moves: {} undos: {}",
+			self.0.stats().recycle_count(),
+			self.0.stats().moves(),
+			self.0.undos()
+		)
+	}
+}
+
 #[derive(Debug)]
 struct Invalid;
 struct Parsed<T>(T);
@@ -144,6 +156,7 @@ impl core::str::FromStr for SessionInstruction {
 }
 
 fn find_valid_instruction(
+	config: &KlondikeConfig,
 	state: &Klondike,
 	naive_instruction: NaiveInstruction,
 ) -> Option<KlondikeInstruction> {
@@ -173,7 +186,7 @@ fn find_valid_instruction(
 						});
 						let instruction =
 							KlondikeInstruction::DstTableau(DstTableau { tableau, src });
-						if state.is_instruction_valid(instruction) {
+						if state.is_instruction_valid(config, instruction) {
 							return Some(instruction);
 						}
 					}
@@ -191,7 +204,7 @@ fn find_valid_instruction(
 		_ => return None,
 	};
 	state
-		.is_instruction_valid(instruction)
+		.is_instruction_valid(config, instruction)
 		.then_some(instruction)
 }
 
@@ -241,9 +254,11 @@ fn get_good_move(state: &Klondike) -> Option<KlondikeInstruction> {
 }
 
 fn main() -> Result<(), std::io::Error> {
-	let mut session = Session::new(Klondike::new_random_default());
+	let mut session = Session::new_default(Klondike::new_random());
 	let mut input = String::new();
 	loop {
+		// display stats
+		println!("{}", Displayed(session.stats()));
 		// display game
 		println!("{}", Displayed(session.state()));
 
@@ -257,7 +272,7 @@ fn main() -> Result<(), std::io::Error> {
 
 		// run game
 		match instruction {
-			SessionInstruction::New => session = Session::new(Klondike::new_random_default()),
+			SessionInstruction::New => session = Session::new_default(Klondike::new_random()),
 			SessionInstruction::Undo => session.undo(),
 			SessionInstruction::Exit => break Ok(()),
 			SessionInstruction::Hint => {
@@ -277,7 +292,7 @@ fn main() -> Result<(), std::io::Error> {
 			}
 			SessionInstruction::Klondike(naive_instruction) => {
 				if let Some(instruction) =
-					find_valid_instruction(session.state(), naive_instruction)
+					find_valid_instruction(session.config(), session.state(), naive_instruction)
 				{
 					session.process_instruction(instruction);
 				} else {
