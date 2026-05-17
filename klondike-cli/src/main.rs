@@ -135,7 +135,7 @@ impl core::str::FromStr for SessionInstruction {
 			"new" | "n" => Self::New,
 			"undo" | "u" => Self::Undo,
 			"hint" | "h" => Self::Hint,
-			"auto" | "a" => Self::Auto,
+			"auto" | "a" | "" => Self::Auto,
 			"exit" => Self::Exit,
 			"s" => Self::Stock,
 			other => Self::Klondike(other.parse()?),
