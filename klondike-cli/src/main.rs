@@ -1,4 +1,4 @@
-use card_game::{Card, Game, Pile, Session, Suit};
+use card_game::{Card, CardValue, Game, Pile, Session, Suit};
 use klondike::{
 	DstFoundation, DstTableau, Foundation, Klondike, KlondikeInstruction, KlondikePile,
 	KlondikePileStack, SkipCards, Tableau, TableauStack,
@@ -236,7 +236,7 @@ fn main() -> Result<(), std::io::Error> {
 					instruction: &KlondikeInstruction,
 				) -> usize {
 					// 1 Move into foundation
-					// 2 T->T Move to reveal new card
+					// 2 T->T Move to reveal new card (moving a non-king to reveal empty tableau also counts)
 					// 3 Move from stock
 					// 4 Rotate stock
 					// 5 T->T Move not revealing new card
@@ -247,7 +247,14 @@ fn main() -> Result<(), std::io::Error> {
 							KlondikePileStack::Tableau(TableauStack {
 								tableau,
 								skip_cards: SkipCards::Skip0,
-							}) if !state.state().is_tableau_face_down_empty(tableau) => 2,
+							}) if !state.state().is_tableau_face_down_empty(tableau)
+								|| state
+									.state()
+									.card(dst_tableau.src)
+									.is_some_and(|card| card.value() != CardValue::KING) =>
+							{
+								2
+							}
 							KlondikePileStack::Stock => 3,
 							_ => 5,
 						},
