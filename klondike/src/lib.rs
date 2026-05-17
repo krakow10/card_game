@@ -316,6 +316,17 @@ impl KlondikeState {
 	pub const fn tableau7(&self) -> &Pile<6, 13> {
 		&self.tableau7
 	}
+	pub fn is_tableau_face_down_empty(&self, tableau: Tableau) -> bool {
+		match tableau {
+			Tableau::Tableau1 => self.tableau1.face_down().is_empty(),
+			Tableau::Tableau2 => self.tableau2.face_down().is_empty(),
+			Tableau::Tableau3 => self.tableau3.face_down().is_empty(),
+			Tableau::Tableau4 => self.tableau4.face_down().is_empty(),
+			Tableau::Tableau5 => self.tableau5.face_down().is_empty(),
+			Tableau::Tableau6 => self.tableau6.face_down().is_empty(),
+			Tableau::Tableau7 => self.tableau7.face_down().is_empty(),
+		}
+	}
 	pub fn card(&self, src: KlondikePileStack) -> Option<&Card> {
 		match src {
 			KlondikePileStack::Tableau(TableauStack {

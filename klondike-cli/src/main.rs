@@ -229,24 +229,35 @@ fn main() -> Result<(), std::io::Error> {
 							src: KlondikePile::Foundation(_),
 							..
 						})
-						// Tableau -> Tableau when not revealing a new card is _usually_ a useless move
-						| KlondikeInstruction::DstTableau(DstTableau {
-							src: KlondikePileStack::Tableau(TableauStack {
-								skip_cards: SkipCards::Skip1
-									| SkipCards::Skip2 | SkipCards::Skip3
-									| SkipCards::Skip4 | SkipCards::Skip5
-									| SkipCards::Skip6 | SkipCards::Skip7
-									| SkipCards::Skip8 | SkipCards::Skip9
-									| SkipCards::Skip10 | SkipCards::Skip11
-									| SkipCards::Skip12,
-								..
-							}),
-							..
-						})
 					)
 				}
-				if let Some(instruction) =
-					session.possible_instructions().filter(useless_moves).next()
+				fn instruction_priority(
+					state: &Klondike,
+					instruction: &KlondikeInstruction,
+				) -> usize {
+					// 1 Move into foundation
+					// 2 T->T Move to reveal new card
+					// 3 Move from stock
+					// 4 Rotate stock
+					// 5 T->T Move not revealing new card
+					// 6 Move from foundation
+					match instruction {
+						KlondikeInstruction::DstFoundation(_) => 1,
+						&KlondikeInstruction::DstTableau(dst_tableau) => match dst_tableau.src {
+							KlondikePileStack::Tableau(TableauStack {
+								tableau,
+								skip_cards: SkipCards::Skip0,
+							}) if !state.state().is_tableau_face_down_empty(tableau) => 2,
+							KlondikePileStack::Stock => 3,
+							_ => 5,
+						},
+						KlondikeInstruction::RotateStock => 4,
+					}
+				}
+				if let Some(instruction) = session
+					.possible_instructions()
+					.filter(useless_moves)
+					.min_by_key(|ins| instruction_priority(session.state(), ins))
 				{
 					session.process_instruction(instruction);
 				} else {
