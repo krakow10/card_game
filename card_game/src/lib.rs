@@ -238,18 +238,12 @@ pub enum SessionInstruction<I> {
 	InnerInstruction(I),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct SessionStats<S> {
 	inner_stats: S,
 	undos: usize,
 }
 impl<S> SessionStats<S> {
-	const fn new(inner_stats: S) -> Self {
-		SessionStats {
-			inner_stats,
-			undos: 0,
-		}
-	}
 	pub const fn stats(&self) -> &S {
 		&self.inner_stats
 	}
@@ -287,9 +281,9 @@ where
 	G::Stats: Clone + Default,
 	G::Instruction: Clone + Eq + core::hash::Hash,
 {
-	pub fn new(state: G, stats: G::Stats, config: G::Config) -> Self {
+	pub fn new(state: G, config: G::Config) -> Self {
 		Self {
-			stats: SessionStats::new(stats),
+			stats: SessionStats::default(),
 			config,
 			state: SessionState::new(state),
 		}
@@ -298,7 +292,7 @@ where
 	where
 		G::Config: Default,
 	{
-		Self::new(state, Default::default(), Default::default())
+		Self::new(state, Default::default())
 	}
 	pub const fn stats(&self) -> &SessionStats<G::Stats> {
 		&self.stats
