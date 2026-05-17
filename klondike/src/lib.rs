@@ -397,21 +397,22 @@ impl KlondikeState {
 			KlondikePile::Stock => self.stock.pop_flip_up(),
 		}
 	}
-	fn extend<D: Into<KlondikePile>, I: IntoIterator<Item = Card>>(&mut self, dst: D, cards: I) {
-		match dst.into() {
-			KlondikePile::Tableau(tableau) => match tableau {
-				Tableau::Tableau1 => self.tableau1.extend(cards),
-				Tableau::Tableau2 => self.tableau2.extend(cards),
-				Tableau::Tableau3 => self.tableau3.extend(cards),
-				Tableau::Tableau4 => self.tableau4.extend(cards),
-				Tableau::Tableau5 => self.tableau5.extend(cards),
-				Tableau::Tableau6 => self.tableau6.extend(cards),
-				Tableau::Tableau7 => self.tableau7.extend(cards),
-			},
-			KlondikePile::Foundation(foundation) => {
-				self.foundations[foundation as usize].extend(cards)
-			}
-			KlondikePile::Stock => self.stock.extend(cards),
+	fn extend_foundation<I: IntoIterator<Item = Card>>(
+		&mut self,
+		foundation: Foundation,
+		cards: I,
+	) {
+		self.foundations[foundation as usize].extend(cards)
+	}
+	fn extend_tableau<I: IntoIterator<Item = Card>>(&mut self, tableau: Tableau, cards: I) {
+		match tableau {
+			Tableau::Tableau1 => self.tableau1.extend(cards),
+			Tableau::Tableau2 => self.tableau2.extend(cards),
+			Tableau::Tableau3 => self.tableau3.extend(cards),
+			Tableau::Tableau4 => self.tableau4.extend(cards),
+			Tableau::Tableau5 => self.tableau5.extend(cards),
+			Tableau::Tableau6 => self.tableau6.extend(cards),
+			Tableau::Tableau7 => self.tableau7.extend(cards),
 		}
 	}
 	pub fn is_instruction_valid(&self, instruction: KlondikeInstruction) -> bool {
@@ -557,12 +558,12 @@ impl Game for Klondike {
 			// Move a card from anywhere to a foundation
 			KlondikeInstruction::DstFoundation(DstFoundation { src, foundation }) => {
 				let card = self.state.take_top_card(src);
-				self.state.extend(foundation, card);
+				self.state.extend_foundation(foundation, card);
 			}
 			// Move a stack of cards from anywhere to a tableau
 			KlondikeInstruction::DstTableau(DstTableau { src, tableau }) => {
 				let cards = self.state.take_stack(src);
-				self.state.extend(tableau, cards);
+				self.state.extend_tableau(tableau, cards);
 			}
 		}
 	}
