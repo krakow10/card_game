@@ -197,12 +197,13 @@ fn find_valid_instruction(
 
 fn main() -> Result<(), std::io::Error> {
 	let mut session = Session::new(Klondike::new_random_default());
+	let mut input = String::new();
 	loop {
 		// display game
 		println!("{}", Displayed(session.state()));
 
 		// parse input
-		let mut input = String::new();
+		input.clear();
 		std::io::stdin().read_line(&mut input)?;
 		let Ok(instruction) = input.trim().parse() else {
 			println!("Invalid instruction.");
