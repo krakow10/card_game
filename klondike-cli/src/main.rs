@@ -228,7 +228,8 @@ fn get_good_move(state: &Klondike) -> Option<KlondikeInstruction> {
 					2
 				}
 				KlondikePileStack::Stock => 3,
-				_ => 5,
+				KlondikePileStack::Tableau(_) => 5,
+				KlondikePileStack::Foundation(_) => 6,
 			},
 			KlondikeInstruction::RotateStock => 4,
 		}
