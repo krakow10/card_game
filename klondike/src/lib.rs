@@ -159,7 +159,7 @@ impl TableauStack {
 			});
 		}
 		if let Some(tableau) = tableau.next() {
-			let skip_cards = SkipCards::Skip0;
+			let skip_cards = SkipCards::ITER_BEGIN;
 			return Some(Self {
 				tableau,
 				skip_cards,
