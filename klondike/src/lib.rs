@@ -554,10 +554,12 @@ impl Game for Klondike {
 					self.state.stock.flip_up();
 				}
 			}
+			// Move a card from anywhere to a foundation
 			KlondikeInstruction::DstFoundation(DstFoundation { src, foundation }) => {
 				let card = self.state.take_top_card(src);
 				self.state.extend(foundation, card);
 			}
+			// Move a stack of cards from anywhere to a tableau
 			KlondikeInstruction::DstTableau(DstTableau { src, tableau }) => {
 				let cards = self.state.take_stack(src);
 				self.state.extend(tableau, cards);
