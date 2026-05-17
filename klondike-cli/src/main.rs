@@ -222,7 +222,7 @@ fn get_good_move(state: &Klondike) -> Option<KlondikeInstruction> {
 				}) if !state.state().is_tableau_face_down_empty(tableau)
 					|| state
 						.state()
-						.card(dst_tableau.src)
+						.stack_bottom_card(dst_tableau.src)
 						.is_some_and(|card| card.value() != CardValue::KING) =>
 				{
 					2

@@ -327,7 +327,7 @@ impl KlondikeState {
 			Tableau::Tableau7 => self.tableau7.face_down().is_empty(),
 		}
 	}
-	pub fn card(&self, src: KlondikePileStack) -> Option<&Card> {
+	pub fn stack_bottom_card(&self, src: KlondikePileStack) -> Option<&Card> {
 		match src {
 			KlondikePileStack::Tableau(TableauStack {
 				tableau,
@@ -444,7 +444,7 @@ impl KlondikeState {
 			// other = move to tableau
 			KlondikeInstruction::DstTableau(dst_tableau) => {
 				// get the cards
-				if let Some(src_card) = self.card(dst_tableau.src) {
+				if let Some(src_card) = self.stack_bottom_card(dst_tableau.src) {
 					match self.top_card(dst_tableau.tableau) {
 						// destination card exists
 						Some(dst_card) => {
