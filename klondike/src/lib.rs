@@ -394,7 +394,7 @@ impl KlondikeState {
 				Tableau::Tableau7 => self.tableau7.pop_flip_up(),
 			},
 			KlondikePile::Foundation(foundation) => self.foundations[foundation as usize].pop(),
-			KlondikePile::Stock => self.stock.pop_flip_up(),
+			KlondikePile::Stock => self.stock.pop(),
 		}
 	}
 	fn extend_foundation<I: IntoIterator<Item = Card>>(
