@@ -347,8 +347,8 @@ impl KlondikeState {
 			KlondikePileStack::Stock => self.stock.face_up().last(),
 		}
 	}
-	pub fn top_card(&self, src: KlondikePile) -> Option<&Card> {
-		match src {
+	pub fn top_card<S: Into<KlondikePile>>(&self, src: S) -> Option<&Card> {
+		match src.into() {
 			KlondikePile::Tableau(tableau) => match tableau {
 				Tableau::Tableau1 => self.tableau1.face_up().last(),
 				Tableau::Tableau2 => self.tableau2.face_up().last(),
@@ -382,8 +382,8 @@ impl KlondikeState {
 			KlondikePileStack::Stock => Stack::from_iter(self.stock.pop()),
 		}
 	}
-	fn take_top_card(&mut self, src: KlondikePile) -> Option<Card> {
-		match src {
+	fn take_top_card<S: Into<KlondikePile>>(&mut self, src: S) -> Option<Card> {
+		match src.into() {
 			KlondikePile::Tableau(tableau) => match tableau {
 				Tableau::Tableau1 => self.tableau1.pop_flip_up(),
 				Tableau::Tableau2 => self.tableau2.pop_flip_up(),
@@ -397,8 +397,8 @@ impl KlondikeState {
 			KlondikePile::Stock => self.stock.pop_flip_up(),
 		}
 	}
-	fn extend<I: IntoIterator<Item = Card>>(&mut self, dst: KlondikePile, cards: I) {
-		match dst {
+	fn extend<D: Into<KlondikePile>, I: IntoIterator<Item = Card>>(&mut self, dst: D, cards: I) {
+		match dst.into() {
 			KlondikePile::Tableau(tableau) => match tableau {
 				Tableau::Tableau1 => self.tableau1.extend(cards),
 				Tableau::Tableau2 => self.tableau2.extend(cards),
@@ -426,7 +426,7 @@ impl KlondikeState {
 			KlondikeInstruction::DstFoundation(dst_foundation) => {
 				// get the top cards
 				if let Some(src_card) = self.top_card(dst_foundation.src) {
-					match self.top_card(dst_foundation.foundation.into()) {
+					match self.top_card(dst_foundation.foundation) {
 						// destination card exists
 						Some(dst_card) => {
 							// suit matches?
@@ -445,7 +445,7 @@ impl KlondikeState {
 			KlondikeInstruction::DstTableau(dst_tableau) => {
 				// get the cards
 				if let Some(src_card) = self.card(dst_tableau.src) {
-					match self.top_card(dst_tableau.tableau.into()) {
+					match self.top_card(dst_tableau.tableau) {
 						// destination card exists
 						Some(dst_card) => {
 							// red-ness is opposite?
@@ -555,12 +555,12 @@ impl Game for Klondike {
 				}
 			}
 			KlondikeInstruction::DstFoundation(DstFoundation { src, foundation }) => {
-				let cards = self.state.take_top_card(src);
-				self.state.extend(foundation.into(), cards);
+				let card = self.state.take_top_card(src);
+				self.state.extend(foundation, card);
 			}
 			KlondikeInstruction::DstTableau(DstTableau { src, tableau }) => {
 				let cards = self.state.take_stack(src);
-				self.state.extend(tableau.into(), cards);
+				self.state.extend(tableau, cards);
 			}
 		}
 	}
