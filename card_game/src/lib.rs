@@ -46,6 +46,16 @@ pub enum Suit {
 }
 impl Suit {
 	pub const SUITS: [Self; 4] = [Self::Spades, Self::Hearts, Self::Clubs, Self::Diamonds];
+	pub const fn new(suit: u8) -> Option<Self> {
+		use Suit::*;
+		Some(match suit {
+			0b00 => Spades,
+			0b01 => Hearts,
+			0b10 => Clubs,
+			0b11 => Diamonds,
+			_ => return None,
+		})
+	}
 	/// Is the suit red.
 	pub const fn is_red(self) -> bool {
 		self as u8 & 0b01 != 0
