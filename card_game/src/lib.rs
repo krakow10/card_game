@@ -410,9 +410,7 @@ where
 					continue 'outer;
 				}
 			}
-			let Some(last_state) = path.pop() else {
-				return None;
-			};
+			let last_state = path.pop()?;
 			state = last_state.state;
 			it = last_state.possible_instructions_iter;
 		}
