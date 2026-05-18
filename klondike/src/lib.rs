@@ -541,14 +541,14 @@ pub struct Klondike {
 impl Klondike {
 	pub fn with_seed(seed: u64) -> Self {
 		use rand::SeedableRng;
-		let rng = Rng::seed_from_u64(seed);
-		Self::with_rng(rng)
+		let mut rng = Rng::seed_from_u64(seed);
+		Self::with_rng(&mut rng)
 	}
-	pub fn with_rng(mut rng: Rng) -> Self {
+	pub fn with_rng(rng: &mut Rng) -> Self {
 		// shuffle a new deck
 		let mut deck = Stack::full_deck(card_game::Deck::Deck1);
 		use rand::seq::SliceRandom;
-		deck.shuffle(&mut rng);
+		deck.shuffle(rng);
 		let mut deck = deck.into_iter();
 
 		// generate tableaus
