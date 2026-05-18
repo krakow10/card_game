@@ -11,7 +11,7 @@ mod test;
 struct ReadmeDoctests;
 
 #[derive(Clone, Copy, Debug, Default)]
-enum DrawStockConfig {
+pub enum DrawStockConfig {
 	#[default]
 	DrawOne = 1,
 	DrawThree = 3,
@@ -19,19 +19,7 @@ enum DrawStockConfig {
 
 #[derive(Clone, Debug, Default)]
 pub struct KlondikeConfig {
-	draw_stock: DrawStockConfig,
-}
-impl KlondikeConfig {
-	pub const fn draw_one_stock() -> Self {
-		KlondikeConfig {
-			draw_stock: DrawStockConfig::DrawOne,
-		}
-	}
-	pub const fn draw_three_stock() -> Self {
-		KlondikeConfig {
-			draw_stock: DrawStockConfig::DrawThree,
-		}
-	}
+	pub draw_stock: DrawStockConfig,
 }
 
 #[derive(Clone, Debug, Default)]
