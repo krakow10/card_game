@@ -135,7 +135,8 @@ impl Rank {
 		}
 	}
 }
-/// An identifier which specifies the deck id, suit, and card value.
+
+/// A card which specifies the deck id, suit, and card value.
 /// 2 bits for deck ID
 /// 2 bits for suit ID
 /// 4 bits for card Value
@@ -224,6 +225,7 @@ impl<const CAP: usize> IntoIterator for Stack<CAP> {
 	}
 }
 
+/// A pile is a stack of face down cards and a stack of face up cards.
 #[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
 pub struct Pile<const DN: usize, const UP: usize> {
 	face_down: Stack<DN>,
