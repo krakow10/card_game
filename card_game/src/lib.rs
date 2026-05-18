@@ -60,8 +60,8 @@ impl Suit {
 	pub const fn is_red(self) -> bool {
 		self as u8 & 0b01 != 0
 	}
-	/// Is the suit shape spikey.  (Bouba/kiki)
-	pub const fn is_kiki(self) -> bool {
+	/// Suit value is 2 bits, is_red is the low bit.
+	pub const fn suit_high_bit(self) -> bool {
 		self as u8 & 0b10 != 0
 	}
 }
@@ -146,9 +146,9 @@ impl Card {
 		Rank::new(masked).unwrap()
 	}
 	pub const fn suit(&self) -> Suit {
-		let red = self.is_red();
-		let kiki = self.is_kiki();
-		match (kiki, red) {
+		let low_bit = self.is_red();
+		let high_bit = self.suit_high_bit();
+		match (high_bit, low_bit) {
 			(false, false) => Suit::Spades,
 			(false, true) => Suit::Hearts,
 			(true, false) => Suit::Clubs,
@@ -159,8 +159,8 @@ impl Card {
 	pub const fn is_red(&self) -> bool {
 		self.0.get() & 0b010000 != 0
 	}
-	/// Is the suit shape spikey.  (Bouba/kiki)
-	pub const fn is_kiki(&self) -> bool {
+	/// Suit value is 2 bits, is_red is the low bit.
+	pub const fn suit_high_bit(&self) -> bool {
 		self.0.get() & 0b100000 != 0
 	}
 	pub const fn deck(&self) -> Deck {
