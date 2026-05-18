@@ -10,3 +10,6 @@ keywords = ["card", "cards", "solitaire", "klondike"]
 
 [dependencies]
 arrayvec = "0.7.6"
+
+[lints]
+workspace = true
