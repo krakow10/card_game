@@ -631,7 +631,7 @@ impl Klondike {
 			.filter(|ins| !ins.is_useless())
 			.min_by_key(|ins| self.instruction_priority(ins))
 	}
-	/// A list of possible moves sorted by a simple prioirty function
+	/// A list of possible moves with useless moves filtered out and sorted by a simple priority function
 	pub fn get_sorted_moves(&self) -> Vec<KlondikeInstruction> {
 		let mut useful_moves: Vec<_> = self
 			.possible_instructions()
