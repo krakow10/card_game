@@ -1,4 +1,4 @@
-use crate::Klondike;
+use klondike::Klondike;
 use card_game::Session;
 #[test]
 fn test_is_winnable() {

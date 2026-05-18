@@ -2,9 +2,6 @@ pub type Rng = rand::rngs::StdRng;
 
 use card_game::{Card, Game, Pile, Rank, Stack};
 
-#[cfg(test)]
-mod test;
-
 // test readme
 #[doc = include_str!("../README.md")]
 #[cfg(doctest)]
