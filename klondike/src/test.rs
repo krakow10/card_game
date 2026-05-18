@@ -3,13 +3,13 @@ use card_game::Session;
 #[test]
 fn test_is_winnable() {
 	// is winnable
-	let is_winnable = Session::new_default(Klondike::new_random()).is_winnable();
+	let is_winnable = Session::new_default(Klondike::with_seed(123)).is_winnable();
 	println!("is_winnable = {is_winnable:?}");
 }
 #[test]
 fn test_klondike() {
 	// create game session
-	let game = Klondike::new_random();
+	let game = Klondike::with_seed(123);
 	let mut session = Session::new_default(game);
 
 	// is winnable

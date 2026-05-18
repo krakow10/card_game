@@ -255,10 +255,14 @@ fn get_good_move(state: &Klondike) -> Option<KlondikeInstruction> {
 }
 
 fn main() -> Result<(), std::io::Error> {
-	let mut session = Session::new_default(Klondike::new_random());
+	use rand::RngExt;
+	let mut rng = rand::rng();
+	let mut seed = rng.random();
+	let mut session = Session::new_default(Klondike::with_seed(seed));
 	let mut input = String::new();
 	loop {
 		// display stats
+		println!("seed: {seed} ");
 		println!("{}", Displayed(session.stats()));
 		// display game
 		println!("{}", Displayed(session.state()));
@@ -273,7 +277,10 @@ fn main() -> Result<(), std::io::Error> {
 
 		// run game
 		match instruction {
-			SessionInstruction::New => session = Session::new_default(Klondike::new_random()),
+			SessionInstruction::New => {
+				seed = rng.random();
+				session = Session::new_default(Klondike::with_seed(seed))
+			}
 			SessionInstruction::Undo => session.undo(),
 			SessionInstruction::Exit => break Ok(()),
 			SessionInstruction::Hint => {

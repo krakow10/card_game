@@ -1,4 +1,4 @@
-pub type Rng = rand::rngs::ThreadRng;
+pub type Rng = rand::rngs::StdRng;
 
 use card_game::{Card, Game, Pile, Rank, Stack};
 
@@ -532,14 +532,16 @@ pub struct Klondike {
 	state: KlondikeState,
 }
 impl Klondike {
-	pub fn new_random() -> Self {
-		Self::new(Rng::default())
+	pub fn with_seed(seed: u64) -> Self {
+		use rand::SeedableRng;
+		let rng = Rng::seed_from_u64(seed);
+		Self::with_rng(rng)
 	}
-	pub fn new(mut seed: Rng) -> Self {
+	pub fn with_rng(mut rng: Rng) -> Self {
 		// shuffle a new deck
 		let mut deck = Stack::full_deck(card_game::Deck::Deck1);
 		use rand::seq::SliceRandom;
-		deck.shuffle(&mut seed);
+		deck.shuffle(&mut rng);
 		let mut deck = deck.into_iter();
 
 		// generate tableaus

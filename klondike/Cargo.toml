@@ -5,4 +5,4 @@ edition = "2024"
 
 [dependencies]
 card_game = { version = "0.1.0", path = "../card_game" }
-rand = { version = "0.10.1", default-features = false, features = ["thread_rng"] }
+rand = { version = "0.10.1", default-features = false, features = ["std_rng"] }
