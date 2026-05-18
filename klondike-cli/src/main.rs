@@ -87,10 +87,11 @@ impl Display for Displayed<&SessionStats<KlondikeStats>> {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		write!(
 			f,
-			"recycles: {} moves: {} undos: {}",
+			"recycles: {} moves: {} undos: {} score:{}",
 			self.0.stats().recycle_count(),
 			self.0.stats().moves(),
-			self.0.undos()
+			self.0.undos(),
+			self.0.stats().score() - self.0.undos() * 15,
 		)
 	}
 }

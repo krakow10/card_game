@@ -24,21 +24,34 @@ pub struct KlondikeConfig {
 
 #[derive(Clone, Debug, Default)]
 pub struct KlondikeStats {
+	score: usize,
 	recycle_count: usize,
 	moves: usize,
 }
 impl KlondikeStats {
 	pub const fn new() -> Self {
 		KlondikeStats {
+			score: 0,
 			recycle_count: 0,
 			moves: 0,
 		}
+	}
+	pub const fn score(&self) -> usize {
+		self.score
 	}
 	pub const fn recycle_count(&self) -> usize {
 		self.recycle_count
 	}
 	pub const fn moves(&self) -> usize {
 		self.moves
+	}
+	/// A card was moved to a foundation.
+	const fn increment_score_foundation(&mut self) {
+		self.score += 10;
+	}
+	/// A card was moved from stock to tableau.
+	const fn increment_score_tableau(&mut self) {
+		self.score += 5;
 	}
 	const fn increment_recycle_count(&mut self) {
 		self.recycle_count += 1;
@@ -597,11 +610,15 @@ impl Game for Klondike {
 			}
 			// Move a card from anywhere to a foundation
 			KlondikeInstruction::DstFoundation(DstFoundation { src, foundation }) => {
+				stats.increment_score_foundation();
 				let card = self.state.take_top_card(src);
 				self.state.extend_foundation(foundation, card);
 			}
 			// Move a stack of cards from anywhere to a tableau
 			KlondikeInstruction::DstTableau(DstTableau { src, tableau }) => {
+				if src == KlondikePileStack::Stock {
+					stats.increment_score_tableau();
+				}
 				let cards = self.state.take_stack(src);
 				self.state.extend_tableau(tableau, cards);
 			}
