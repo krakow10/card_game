@@ -6,6 +6,10 @@ members = [
 ]
 resolver = "3"
 
+[workspace.dependencies]
+card_game = { version = "0.1.0", path = "card_game" }
+klondike = { version = "0.1.0", path = "klondike" }
+
 [workspace.lints.rust]
 # unsafe_code = "forbid"
 # missing_docs = "warn"

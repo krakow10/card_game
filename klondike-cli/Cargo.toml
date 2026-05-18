@@ -4,6 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-card_game = { version = "0.1.0", path = "../card_game" }
-klondike = { version = "0.1.0", path = "../klondike" }
+card_game.workspace = true
+klondike.workspace = true
 rand = { version = "0.10.1", default-features = false, features = ["thread_rng"] }
