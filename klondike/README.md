@@ -6,7 +6,7 @@ Klondike
 ## Example
 
 ```rust
-use card_game::{Session, Game};
+use card_game::Session;
 use klondike::Klondike;
 
 // create game session
