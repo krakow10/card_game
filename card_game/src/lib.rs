@@ -124,7 +124,6 @@ impl Rank {
 /// 2 bits for deck ID
 /// 2 bits for suit ID
 /// 4 bits for card Value
-/// TODO: better encoding for slightly more decks
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Card(core::num::NonZeroU8);
 impl Card {
