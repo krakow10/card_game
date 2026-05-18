@@ -133,6 +133,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "klondike-bench"
+version = "0.1.0"
+dependencies = [
+ "card_game",
+ "klondike",
+ "rand",
+]
+
+[[package]]
 name = "klondike-cli"
 version = "0.1.0"
 dependencies = [

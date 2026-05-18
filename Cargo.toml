@@ -2,6 +2,7 @@
 members = [
 	"card_game",
 	"klondike",
+	"klondike-bench",
 	"klondike-cli",
 ]
 resolver = "3"
