@@ -1,3 +1,8 @@
+// test readme
+#[doc = include_str!("../README.md")]
+#[cfg(doctest)]
+struct ReadmeDoctests;
+
 use core::ops::RangeBounds;
 
 // TODO: pub struct ValidInstruction<I>(I);
