@@ -26,7 +26,7 @@ fn play_to_win(rng: &mut Rng) -> Option<KlondikeStats> {
 fn main() {
 	use rand::SeedableRng;
 	let mut rng = Rng::seed_from_u64(0);
-	const GAMES: u32 = 100000;
+	const GAMES: u32 = 1000;
 	let mut wins = 0;
 	let mut score_tally = [0usize; MAX_MOVES * 10 / 5];
 	let mut recycle_tally = [0usize; MAX_MOVES];
