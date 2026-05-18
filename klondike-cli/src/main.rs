@@ -91,7 +91,7 @@ impl Display for Displayed<&SessionStats<KlondikeStats>> {
 			self.0.stats().recycle_count(),
 			self.0.stats().moves(),
 			self.0.undos(),
-			self.0.stats().score() - self.0.undos() * 15,
+			self.0.stats().score() as isize - self.0.undos() as isize * 15,
 		)
 	}
 }
