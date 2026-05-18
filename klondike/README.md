@@ -6,20 +6,21 @@ Card Game
 ## Example
 
 ```rust
-use card_game::Rng;
-use card_game::card_game::{Session, Game};
-use card_game::klondike::Klondike;
+use card_game::{Session, Game};
+use klondike::Klondike;
 
 // create game session
-let game = Klondike::new_random();
+let game = Klondike::with_seed(123);
 let mut session = Session::new_default(game);
 
-// is winnable
-let is_winnable = session.is_winnable().is_some();
-
-// play game
+// play game a bit
 while let Some(instruction) = session.possible_instructions().next() {
 	session.process_instruction(instruction);
+
+	// quit after 1000 moves
+	if 1000 < session.stats().stats().moves() {
+		break;
+	}
 }
 
 // did win
@@ -30,7 +31,6 @@ for (i, instruction) in session.history().iter().enumerate() {
 	println!("move {i} = {instruction:?}");
 }
 
-println!("is_winnable = {is_winnable}");
 println!("is_win = {is_win}");
 ```
 
