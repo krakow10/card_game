@@ -625,12 +625,13 @@ impl Klondike {
 			KlondikeInstruction::RotateStock => 4,
 		}
 	}
-	/// A list of possible moves sorted by a simple prioirty function
+	/// A single move that usually makes progress towards a winning game
 	pub fn get_auto_move(&self) -> Option<KlondikeInstruction> {
 		self.possible_instructions()
 			.filter(|ins| !ins.is_useless())
 			.min_by_key(|ins| self.instruction_priority(ins))
 	}
+	/// A list of possible moves sorted by a simple prioirty function
 	pub fn get_sorted_moves(&self) -> Vec<KlondikeInstruction> {
 		let mut useful_moves: Vec<_> = self
 			.possible_instructions()
