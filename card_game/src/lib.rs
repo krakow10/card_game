@@ -168,7 +168,7 @@ impl Card {
 	}
 }
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
 pub struct Stack<const CAP: usize>(arrayvec::ArrayVec<Card, CAP>);
 impl<const CAP: usize> Stack<CAP> {
 	pub const fn new() -> Self {
@@ -219,7 +219,7 @@ impl<const CAP: usize> IntoIterator for Stack<CAP> {
 	}
 }
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
 pub struct Pile<const DN: usize, const UP: usize> {
 	face_down: Stack<DN>,
 	face_up: Stack<UP>,
