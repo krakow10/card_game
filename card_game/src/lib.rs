@@ -47,11 +47,11 @@ pub enum Suit {
 impl Suit {
 	pub const SUITS: [Self; 4] = [Self::Spades, Self::Hearts, Self::Clubs, Self::Diamonds];
 	/// Is the suit red.
-	pub fn is_red(self) -> bool {
+	pub const fn is_red(self) -> bool {
 		self as u8 & 0b01 != 0
 	}
 	/// Is the suit shape spikey.  (Bouba/kiki)
-	pub fn is_kiki(self) -> bool {
+	pub const fn is_kiki(self) -> bool {
 		self as u8 & 0b10 != 0
 	}
 }
@@ -215,13 +215,13 @@ pub struct Pile<const DN: usize, const UP: usize> {
 	face_up: Stack<UP>,
 }
 impl<const DN: usize, const UP: usize> Pile<DN, UP> {
-	pub fn new() -> Self {
+	pub const fn new() -> Self {
 		Self {
 			face_down: Stack::new(),
 			face_up: Stack::new(),
 		}
 	}
-	pub fn new_face_down(stack: Stack<DN>) -> Self {
+	pub const fn new_face_down(stack: Stack<DN>) -> Self {
 		Self {
 			face_down: stack,
 			face_up: Stack::new(),
@@ -276,7 +276,7 @@ impl<const CAP: usize> Pile<CAP, CAP> {
 		self.swap_up_down();
 		self.face_down.reverse();
 	}
-	pub fn swap_up_down(&mut self) {
+	pub const fn swap_up_down(&mut self) {
 		core::mem::swap(&mut self.face_up, &mut self.face_down);
 	}
 }
