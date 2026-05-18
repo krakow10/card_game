@@ -1,7 +1,7 @@
 Card Game
 =========
 
-`card_game` is a library to implement card games.  Mainly interesting for the `Game` trait and the `Session` type.
+`card_game` is a collection of algorithms, structs, and enums which are useful to implement card games.
 
 ## Example
 
