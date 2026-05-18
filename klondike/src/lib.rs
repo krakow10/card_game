@@ -299,6 +299,16 @@ impl KlondikeInstruction {
 			Self::RotateStock => return None,
 		})
 	}
+	/// foundation -> foundation is a useless move
+	pub fn is_useless(&self) -> bool {
+		matches!(
+			self,
+			KlondikeInstruction::DstFoundation(DstFoundation {
+				src: KlondikePile::Foundation(_),
+				..
+			})
+		)
+	}
 }
 
 const TABLEAUS: usize = 7;
@@ -586,6 +596,48 @@ impl Klondike {
 			&& self.state.tableau5.face_down().is_empty()
 			&& self.state.tableau6.face_down().is_empty()
 			&& self.state.tableau7.face_down().is_empty()
+	}
+	fn instruction_priority(&self, instruction: &KlondikeInstruction) -> usize {
+		// 1 Move into foundation
+		// 2 T->T Move to reveal new card (moving a non-king to reveal empty tableau also counts)
+		// 3 Move from stock
+		// 4 Rotate stock
+		// 5 T->T Move not revealing new card
+		// 6 Move from foundation
+		match instruction {
+			KlondikeInstruction::DstFoundation(_) => 1,
+			&KlondikeInstruction::DstTableau(dst_tableau) => match dst_tableau.src {
+				KlondikePileStack::Tableau(TableauStack {
+					tableau,
+					skip_cards: SkipCards::Skip0,
+				}) if !self.state().is_tableau_face_down_empty(tableau)
+					|| self
+						.state()
+						.stack_bottom_card(dst_tableau.src)
+						.is_some_and(|card| card.rank() != Rank::King) =>
+				{
+					2
+				}
+				KlondikePileStack::Stock => 3,
+				KlondikePileStack::Tableau(_) => 5,
+				KlondikePileStack::Foundation(_) => 6,
+			},
+			KlondikeInstruction::RotateStock => 4,
+		}
+	}
+	/// A list of possible moves sorted by a simple prioirty function
+	pub fn get_auto_move(&self) -> Option<KlondikeInstruction> {
+		self.possible_instructions()
+			.filter(|ins| !ins.is_useless())
+			.min_by_key(|ins| self.instruction_priority(ins))
+	}
+	pub fn get_sorted_moves(&self) -> Vec<KlondikeInstruction> {
+		let mut useful_moves: Vec<_> = self
+			.possible_instructions()
+			.filter(|ins| !ins.is_useless())
+			.collect();
+		useful_moves.sort_by_key(|ins| self.instruction_priority(ins));
+		useful_moves
 	}
 }
 

@@ -212,51 +212,6 @@ fn find_valid_instruction(
 		.then_some(instruction)
 }
 
-fn get_good_move(state: &Klondike) -> Option<KlondikeInstruction> {
-	fn useless_moves(instruction: &KlondikeInstruction) -> bool {
-		!matches!(
-			instruction,
-			// foundation -> foundation is a useless move
-			KlondikeInstruction::DstFoundation(DstFoundation {
-				src: KlondikePile::Foundation(_),
-				..
-			})
-		)
-	}
-	fn instruction_priority(state: &Klondike, instruction: &KlondikeInstruction) -> usize {
-		// 1 Move into foundation
-		// 2 T->T Move to reveal new card (moving a non-king to reveal empty tableau also counts)
-		// 3 Move from stock
-		// 4 Rotate stock
-		// 5 T->T Move not revealing new card
-		// 6 Move from foundation
-		match instruction {
-			KlondikeInstruction::DstFoundation(_) => 1,
-			&KlondikeInstruction::DstTableau(dst_tableau) => match dst_tableau.src {
-				KlondikePileStack::Tableau(TableauStack {
-					tableau,
-					skip_cards: SkipCards::Skip0,
-				}) if !state.state().is_tableau_face_down_empty(tableau)
-					|| state
-						.state()
-						.stack_bottom_card(dst_tableau.src)
-						.is_some_and(|card| card.rank() != Rank::King) =>
-				{
-					2
-				}
-				KlondikePileStack::Stock => 3,
-				KlondikePileStack::Tableau(_) => 5,
-				KlondikePileStack::Foundation(_) => 6,
-			},
-			KlondikeInstruction::RotateStock => 4,
-		}
-	}
-	state
-		.possible_instructions()
-		.filter(useless_moves)
-		.min_by_key(|ins| instruction_priority(state, ins))
-}
-
 fn main() -> Result<(), std::io::Error> {
 	use rand::RngExt;
 	let mut rng = rand::rng();
@@ -297,7 +252,7 @@ fn main() -> Result<(), std::io::Error> {
 				}
 			}
 			SessionInstruction::Auto => {
-				if let Some(instruction) = get_good_move(session.state()) {
+				if let Some(instruction) = session.state().get_auto_move() {
 					session.process_instruction(instruction);
 				} else {
 					println!("No valid moves!");
