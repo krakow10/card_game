@@ -1,7 +1,7 @@
-Card Game
-=========
+Klondike
+========
 
-`card_game` is a library to implement card games.  Mainly interesting for the `Game` trait and the `Session` type.  Contains klondike as the reference implementation.
+`klondike` is a pure-logic implementation of Klondike using `card_game`.  Graphics not included.
 
 ## Example
 
