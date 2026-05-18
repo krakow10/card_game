@@ -16,6 +16,27 @@ pub trait Game {
 	fn is_win(&self) -> bool;
 }
 
+/// card_game supports up to 4 identifiably separate decks.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum Deck {
+	Deck1,
+	Deck2,
+	Deck3,
+	Deck4,
+}
+impl Deck {
+	pub const fn new(deck: u8) -> Option<Self> {
+		use Deck::*;
+		Some(match deck {
+			1 => Deck1,
+			2 => Deck2,
+			3 => Deck3,
+			4 => Deck4,
+			_ => return None,
+		})
+	}
+}
+
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum Suit {
 	Spades = 0b00,
@@ -36,38 +57,66 @@ impl Suit {
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub struct CardValue(u8);
-impl CardValue {
-	pub const ACE: Self = CardValue(1);
-	pub const TWO: Self = CardValue(2);
-	pub const THREE: Self = CardValue(3);
-	pub const FOUR: Self = CardValue(4);
-	pub const FIVE: Self = CardValue(5);
-	pub const SIX: Self = CardValue(6);
-	pub const SEVEN: Self = CardValue(7);
-	pub const EIGHT: Self = CardValue(8);
-	pub const NINE: Self = CardValue(9);
-	pub const TEN: Self = CardValue(10);
-	pub const JACK: Self = CardValue(11);
-	pub const QUEEN: Self = CardValue(12);
-	pub const KING: Self = CardValue(13);
-	pub fn get(self) -> u8 {
-		self.0
+pub enum Rank {
+	Ace = 1,
+	Two = 2,
+	Three = 3,
+	Four = 4,
+	Five = 5,
+	Six = 6,
+	Seven = 7,
+	Eight = 8,
+	Nine = 9,
+	Ten = 10,
+	Jack = 11,
+	Queen = 12,
+	King = 13,
+}
+impl Rank {
+	pub const RANKS: [Self; 13] = [
+		Self::Ace,
+		Self::Two,
+		Self::Three,
+		Self::Four,
+		Self::Five,
+		Self::Six,
+		Self::Seven,
+		Self::Eight,
+		Self::Nine,
+		Self::Ten,
+		Self::Jack,
+		Self::Queen,
+		Self::King,
+	];
+	pub const fn new(rank: u8) -> Option<Self> {
+		use Rank::*;
+		Some(match rank {
+			1 => Ace,
+			2 => Two,
+			3 => Three,
+			4 => Four,
+			5 => Five,
+			6 => Six,
+			7 => Seven,
+			8 => Eight,
+			9 => Nine,
+			10 => Ten,
+			11 => Jack,
+			12 => Queen,
+			13 => King,
+			_ => return None,
+		})
 	}
-	pub fn checked_add(self, offset: u8) -> Option<CardValue> {
-		let new_value = self.0.checked_add(offset)?;
-		if 13 < new_value {
-			None
-		} else {
-			Some(CardValue(new_value))
+	pub const fn checked_add(self, offset: u8) -> Option<Rank> {
+		match (self as u8).checked_add(offset) {
+			Some(rank) => Self::new(rank),
+			None => None,
 		}
 	}
-	pub fn checked_sub(self, offset: u8) -> Option<CardValue> {
-		let new_value = self.0.checked_sub(offset)?;
-		if new_value < 1 {
-			None
-		} else {
-			Some(CardValue(new_value))
+	pub const fn checked_sub(self, offset: u8) -> Option<Rank> {
+		match (self as u8).checked_sub(offset) {
+			Some(rank) => Self::new(rank),
+			None => None,
 		}
 	}
 }
@@ -77,16 +126,17 @@ impl CardValue {
 /// 4 bits for card Value
 /// TODO: better encoding for slightly more decks
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct Card(u8);
+pub struct Card(core::num::NonZeroU8);
 impl Card {
-	pub fn new(deck: u8, suit: Suit, CardValue(value): CardValue) -> Self {
-		Self(deck << 6 | (suit as u8) << 4 | value)
+	pub const fn new(deck: Deck, suit: Suit, rank: Rank) -> Self {
+		let packed = (deck as u8) << 6 | (suit as u8) << 4 | (rank as u8);
+		Self(core::num::NonZeroU8::new(packed).unwrap())
 	}
-	pub fn value(&self) -> CardValue {
-		let masked = self.0 & 0b1111;
-		CardValue(masked)
+	pub const fn rank(&self) -> Rank {
+		let masked = self.0.get() & 0b1111;
+		Rank::new(masked).unwrap()
 	}
-	pub fn suit(&self) -> Suit {
+	pub const fn suit(&self) -> Suit {
 		let red = self.is_red();
 		let kiki = self.is_kiki();
 		match (kiki, red) {
@@ -97,15 +147,15 @@ impl Card {
 		}
 	}
 	/// Is the suit red.
-	pub fn is_red(&self) -> bool {
-		self.0 & 0b010000 != 0
+	pub const fn is_red(&self) -> bool {
+		self.0.get() & 0b010000 != 0
 	}
 	/// Is the suit shape spikey.  (Bouba/kiki)
-	pub fn is_kiki(&self) -> bool {
-		self.0 & 0b100000 != 0
+	pub const fn is_kiki(&self) -> bool {
+		self.0.get() & 0b100000 != 0
 	}
-	pub fn deck(&self) -> u8 {
-		self.0 >> 6
+	pub const fn deck(&self) -> Deck {
+		Deck::new(self.0.get() >> 6).unwrap()
 	}
 }
 
@@ -121,11 +171,11 @@ impl<const CAP: usize> Stack<CAP> {
 }
 impl Stack<52> {
 	/// Generate a full deck of cards with the specified deck id.
-	pub fn full_deck(deck: u8) -> Self {
+	pub fn full_deck(deck: Deck) -> Self {
 		let mut stack = arrayvec::ArrayVec::new();
 		for suit in Suit::SUITS {
-			for value in 1..=13 {
-				stack.push(Card::new(deck, suit, CardValue(value)));
+			for rank in Rank::RANKS {
+				stack.push(Card::new(deck, suit, rank));
 			}
 		}
 		Stack(stack)

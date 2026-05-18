@@ -1,4 +1,4 @@
-use card_game::{Card, CardValue, Game, Pile, Session, SessionStats, Suit};
+use card_game::{Card, Game, Pile, Rank, Session, SessionStats, Suit};
 use klondike::{
 	DstFoundation, DstTableau, Foundation, Klondike, KlondikeConfig, KlondikeInstruction,
 	KlondikePile, KlondikePileStack, KlondikeStats, SkipCards, Tableau, TableauStack,
@@ -9,12 +9,12 @@ struct Displayed<T>(T);
 
 impl Display for Displayed<&Card> {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		match self.0.value().get() {
-			1 => write!(f, "A"),
-			11 => write!(f, "J"),
-			12 => write!(f, "Q"),
-			13 => write!(f, "K"),
-			other => write!(f, "{other}"),
+		match self.0.rank() {
+			Rank::Ace => write!(f, "A"),
+			Rank::Jack => write!(f, "J"),
+			Rank::Queen => write!(f, "Q"),
+			Rank::King => write!(f, "K"),
+			other => write!(f, "{}", other as u8),
 		}?;
 		match self.0.suit() {
 			Suit::Spades => write!(f, "♠"),
@@ -236,7 +236,7 @@ fn get_good_move(state: &Klondike) -> Option<KlondikeInstruction> {
 					|| state
 						.state()
 						.stack_bottom_card(dst_tableau.src)
-						.is_some_and(|card| card.value() != CardValue::KING) =>
+						.is_some_and(|card| card.rank() != Rank::King) =>
 				{
 					2
 				}

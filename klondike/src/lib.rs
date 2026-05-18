@@ -1,6 +1,6 @@
 pub type Rng = rand::rngs::ThreadRng;
 
-use card_game::{Card, CardValue, Game, Pile, Stack};
+use card_game::{Card, Game, Pile, Rank, Stack};
 
 #[cfg(test)]
 mod test;
@@ -475,10 +475,10 @@ impl KlondikeState {
 							// suit matches?
 							src_card.suit() == dst_card.suit()
 							// value is +1?
-							&& dst_card.value().checked_add(1) == Some(src_card.value())
+							&& dst_card.rank().checked_add(1) == Some(src_card.rank())
 						}
 						// only ace is allowed to go onto empty foundation
-						None => src_card.value() == CardValue::ACE,
+						None => src_card.rank() == Rank::Ace,
 					}
 				} else {
 					false
@@ -494,10 +494,10 @@ impl KlondikeState {
 							// red-ness is opposite?
 							src_card.is_red() != dst_card.is_red()
 							// value is -1?
-							&& dst_card.value().checked_sub(1) == Some(src_card.value())
+							&& dst_card.rank().checked_sub(1) == Some(src_card.rank())
 						}
 						// only king is allowed to go onto empty tableau
-						None => src_card.value() == CardValue::KING,
+						None => src_card.rank() == Rank::King,
 					}
 				} else {
 					false
@@ -536,7 +536,7 @@ impl Klondike {
 	}
 	pub fn new(mut seed: Rng) -> Self {
 		// shuffle a new deck
-		let mut deck = Stack::full_deck(0);
+		let mut deck = Stack::full_deck(card_game::Deck::Deck1);
 		use rand::seq::SliceRandom;
 		deck.shuffle(&mut seed);
 		let mut deck = deck.into_iter();
