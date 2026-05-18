@@ -14,7 +14,7 @@ let game = Klondike::with_seed(123);
 let mut session = Session::new_default(game);
 
 // play game a bit
-while let Some(instruction) = session.possible_instructions().next() {
+while let Some(instruction) = session.state().get_auto_move() {
 	session.process_instruction(instruction);
 
 	// quit after 1000 moves
