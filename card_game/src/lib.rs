@@ -387,40 +387,6 @@ where
 	pub fn is_win(&self) -> bool {
 		self.state.is_win()
 	}
-	pub fn is_winnable(&self) -> Option<Vec<G::Instruction>> {
-		let mut observed = std::collections::HashSet::new();
-		struct StateMachine<G, P, I> {
-			state: G,
-			possible_instructions_iter: P,
-			instruction: I,
-		}
-		let mut dummy_stats = self.stats.inner_stats.clone();
-		let mut state = self.state.state.clone();
-		let mut it = state.possible_instructions();
-		let mut path = Vec::new();
-		'outer: while !state.is_win() {
-			observed.insert(state.clone());
-			for instruction in &mut it {
-				let mut next_state = state.clone();
-				next_state.process_instruction(&mut dummy_stats, &self.config, instruction.clone());
-				if !observed.contains(&next_state) {
-					let possible_instructions_iter =
-						core::mem::replace(&mut it, next_state.possible_instructions());
-					let state = core::mem::replace(&mut state, next_state);
-					path.push(StateMachine {
-						state,
-						possible_instructions_iter,
-						instruction,
-					});
-					continue 'outer;
-				}
-			}
-			let last_state = path.pop()?;
-			state = last_state.state;
-			it = last_state.possible_instructions_iter;
-		}
-		Some(path.into_iter().map(|state| state.instruction).collect())
-	}
 }
 impl<G: Game> Game for SessionState<G>
 where
