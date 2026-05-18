@@ -257,7 +257,12 @@ fn get_good_move(state: &Klondike) -> Option<KlondikeInstruction> {
 fn main() -> Result<(), std::io::Error> {
 	use rand::RngExt;
 	let mut rng = rand::rng();
-	let mut seed = rng.random();
+	// seed from cli argument
+	let mut seed = if let Some(seed) = std::env::args().skip(1).next() {
+		seed.parse().expect("Invalid u64 seed")
+	} else {
+		rng.random()
+	};
 	let mut session = Session::new_default(Klondike::with_seed(seed));
 	let mut input = String::new();
 	loop {
