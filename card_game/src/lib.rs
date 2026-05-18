@@ -19,19 +19,19 @@ pub trait Game {
 /// card_game supports up to 4 identifiably separate decks.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum Deck {
-	Deck1,
-	Deck2,
-	Deck3,
-	Deck4,
+	Deck1 = 0b00,
+	Deck2 = 0b01,
+	Deck3 = 0b10,
+	Deck4 = 0b11,
 }
 impl Deck {
 	pub const fn new(deck: u8) -> Option<Self> {
 		use Deck::*;
 		Some(match deck {
-			1 => Deck1,
-			2 => Deck2,
-			3 => Deck3,
-			4 => Deck4,
+			0b00 => Deck1,
+			0b01 => Deck2,
+			0b10 => Deck3,
+			0b11 => Deck4,
 			_ => return None,
 		})
 	}
