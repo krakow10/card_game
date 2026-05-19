@@ -137,7 +137,6 @@ impl From<Foundation> for KlondikePile {
 	}
 }
 
-#[repr(u8)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SkipCards {
 	Skip0,
