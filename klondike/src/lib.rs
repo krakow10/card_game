@@ -601,6 +601,10 @@ impl Iterator for KlondikeIter {
 		instruction
 	}
 }
+#[test]
+fn test_klondike_iter() {
+	assert_eq!(KlondikeIter::new().count(), 721);
+}
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Klondike {

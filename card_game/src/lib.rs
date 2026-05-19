@@ -6,11 +6,11 @@ struct ReadmeDoctests;
 use core::ops::RangeBounds;
 
 // TODO: pub struct ValidInstruction<I>(I);
-pub trait Game {
-	type Score;
-	type Stats;
-	type Config;
-	type Instruction;
+pub trait Game: Clone {
+	type Score: Clone + core::fmt::Debug;
+	type Stats: Clone + core::fmt::Debug;
+	type Config: Clone + core::fmt::Debug;
+	type Instruction: Clone + core::fmt::Debug;
 	fn score(&self, stats: &Self::Stats, config: &Self::Config) -> Self::Score;
 	fn possible_instructions(
 		&self,
@@ -353,21 +353,33 @@ impl<C: Default> Default for SessionConfig<C> {
 	}
 }
 
+#[derive(Clone, Debug)]
 pub struct Session<G: Game> {
 	stats: SessionStats<G::Stats>,
 	config: SessionConfig<G::Config>,
 	state: SessionState<G>,
 }
-#[derive(Clone, Eq, Hash, PartialEq)]
-pub struct SessionState<G: Game> {
-	seed: G,
+#[derive(Clone, Debug)]
+pub struct StateSnapshot<G: Game> {
 	state: G,
-	history: Vec<G::Instruction>,
+	instruction: G::Instruction,
+}
+impl<G: Game> StateSnapshot<G> {
+	pub const fn state(&self) -> &G {
+		&self.state
+	}
+	pub const fn instruction(&self) -> &G::Instruction {
+		&self.instruction
+	}
+}
+#[derive(Clone, Debug)]
+pub struct SessionState<G: Game> {
+	state: G,
+	history: Vec<StateSnapshot<G>>,
 }
 impl<G: Game + Clone> SessionState<G> {
 	fn new(state: G) -> Self {
 		Self {
-			seed: state.clone(),
 			state,
 			history: Vec::new(),
 		}
@@ -380,9 +392,9 @@ impl<G: Game> SessionState<G> {
 }
 impl<G: Game<Score = i32>> Session<G>
 where
-	G: Clone + Eq + core::hash::Hash,
-	G::Stats: Clone + Default,
-	G::Instruction: Clone + Eq + core::hash::Hash,
+	G: Eq + core::hash::Hash,
+	G::Stats: Default,
+	G::Instruction: Eq + core::hash::Hash,
 {
 	pub fn new(state: G, config: SessionConfig<G::Config>) -> Self {
 		Self {
@@ -406,7 +418,7 @@ where
 	pub const fn config(&self) -> &SessionConfig<G::Config> {
 		&self.config
 	}
-	pub fn history(&self) -> &[G::Instruction] {
+	pub fn history(&self) -> &[StateSnapshot<G>] {
 		&self.state.history
 	}
 	pub fn undo(&mut self) {
@@ -426,12 +438,39 @@ where
 	pub fn is_win(&self) -> bool {
 		self.state.is_win()
 	}
+	pub fn is_winnable(&self) -> Option<Vec<StateSnapshot<G>>> {
+		let mut state_moves = std::collections::HashMap::new();
+		let mut state = self.clone();
+		while !state.is_win() {
+			// Continue existing iterator if it exists
+			let it = state_moves
+				.entry(state.state().state().clone())
+				.or_insert_with(|| {
+					state
+						.state()
+						.state()
+						.possible_instructions(&self.config().inner)
+				});
+
+			// Run one possible move
+			if let Some(instruction) = it.next() {
+				state.process_instruction(instruction);
+				continue;
+			}
+
+			// No more moves. If we can't undo we're done
+			if state.history().is_empty() {
+				return None;
+			} else {
+				state.undo();
+			}
+		}
+		Some(state.state.history)
+	}
 }
 impl<G: Game<Score = i32>> Game for SessionState<G>
 where
-	G: Clone,
 	G::Stats: Default,
-	G::Instruction: Clone,
 {
 	type Score = i32;
 	type Stats = SessionStats<G::Stats>;
@@ -464,19 +503,16 @@ where
 	) {
 		match instruction {
 			SessionInstruction::Undo => {
-				// replay the entire history of the game except one move
-				self.history.pop();
-				let mut inner_stats = G::Stats::default();
-				let mut state = self.seed.clone();
-				for instruction in &self.history {
-					state.process_instruction(&mut inner_stats, &config.inner, instruction.clone());
+				if let Some(snapshot) = self.history.pop() {
+					self.state = snapshot.state;
+					stats.increment_undos();
 				}
-				self.state = state;
-				stats.inner = inner_stats;
-				stats.increment_undos();
 			}
 			SessionInstruction::InnerInstruction(instruction) => {
-				self.history.push(instruction.clone());
+				self.history.push(StateSnapshot {
+					state: self.state.clone(),
+					instruction: instruction.clone(),
+				});
 				self.state
 					.process_instruction(&mut stats.inner, &config.inner, instruction);
 			}

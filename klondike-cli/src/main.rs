@@ -4,8 +4,8 @@ use klondike::{
 	KlondikePile, KlondikePileStack, SkipCards, Tableau, TableauStack,
 };
 
-// #[cfg(test)]
-// mod test;
+#[cfg(test)]
+mod test;
 
 use std::fmt::Display;
 struct Displayed<T>(T);
