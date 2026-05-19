@@ -17,8 +17,8 @@ let mut session = Session::new_default(game);
 while let Some(instruction) = session.state().get_auto_move() {
 	session.process_instruction(instruction);
 
-	// quit after 1000 moves
-	if 1000 < session.stats().stats().moves() {
+	// quit after 200 moves or win
+	if session.is_win() || 200 < session.stats().stats().moves() {
 		break;
 	}
 }
