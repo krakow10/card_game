@@ -9,7 +9,7 @@ authors = ["Rhys Lloyd <krakow20@gmail.com>"]
 keywords = ["card", "cards", "solitaire", "klondike"]
 
 [dependencies]
-arrayvec = "0.7.6"
+arrayvec = { version = "0.7.6", registry = "Quaternions", features = ["len_u8"], default-features = false }
 
 [lints]
 workspace = true
