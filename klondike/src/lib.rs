@@ -582,7 +582,7 @@ impl Klondike {
 	/// Check if the game should be auto-completed
 	pub fn is_win_trivial(&self) -> bool {
 		// all face down cards empty means win
-		self.state.stock.face_down().is_empty()
+		self.state.stock.is_empty()
 			&& self.state.tableau1.face_down().is_empty()
 			&& self.state.tableau2.face_down().is_empty()
 			&& self.state.tableau3.face_down().is_empty()
