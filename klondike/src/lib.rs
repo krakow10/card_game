@@ -365,15 +365,26 @@ impl KlondikeState {
 	pub const fn tableau7(&self) -> &Pile<6, 13> {
 		&self.tableau7
 	}
-	pub fn is_tableau_face_down_empty(&self, tableau: Tableau) -> bool {
+	pub fn tableau_face_down_cards(&self, tableau: Tableau) -> &[Card] {
 		match tableau {
-			Tableau::Tableau1 => self.tableau1.face_down().is_empty(),
-			Tableau::Tableau2 => self.tableau2.face_down().is_empty(),
-			Tableau::Tableau3 => self.tableau3.face_down().is_empty(),
-			Tableau::Tableau4 => self.tableau4.face_down().is_empty(),
-			Tableau::Tableau5 => self.tableau5.face_down().is_empty(),
-			Tableau::Tableau6 => self.tableau6.face_down().is_empty(),
-			Tableau::Tableau7 => self.tableau7.face_down().is_empty(),
+			Tableau::Tableau1 => self.tableau1.face_down(),
+			Tableau::Tableau2 => self.tableau2.face_down(),
+			Tableau::Tableau3 => self.tableau3.face_down(),
+			Tableau::Tableau4 => self.tableau4.face_down(),
+			Tableau::Tableau5 => self.tableau5.face_down(),
+			Tableau::Tableau6 => self.tableau6.face_down(),
+			Tableau::Tableau7 => self.tableau7.face_down(),
+		}
+	}
+	pub fn tableau_face_up_cards(&self, tableau: Tableau) -> &[Card] {
+		match tableau {
+			Tableau::Tableau1 => self.tableau1.face_up(),
+			Tableau::Tableau2 => self.tableau2.face_up(),
+			Tableau::Tableau3 => self.tableau3.face_up(),
+			Tableau::Tableau4 => self.tableau4.face_up(),
+			Tableau::Tableau5 => self.tableau5.face_up(),
+			Tableau::Tableau6 => self.tableau6.face_up(),
+			Tableau::Tableau7 => self.tableau7.face_up(),
 		}
 	}
 	pub fn stack_bottom_card(&self, src: KlondikePileStack) -> Option<&Card> {
@@ -381,15 +392,7 @@ impl KlondikeState {
 			KlondikePileStack::Tableau(TableauStack {
 				tableau,
 				skip_cards,
-			}) => match tableau {
-				Tableau::Tableau1 => self.tableau1.face_up().get(skip_cards as usize),
-				Tableau::Tableau2 => self.tableau2.face_up().get(skip_cards as usize),
-				Tableau::Tableau3 => self.tableau3.face_up().get(skip_cards as usize),
-				Tableau::Tableau4 => self.tableau4.face_up().get(skip_cards as usize),
-				Tableau::Tableau5 => self.tableau5.face_up().get(skip_cards as usize),
-				Tableau::Tableau6 => self.tableau6.face_up().get(skip_cards as usize),
-				Tableau::Tableau7 => self.tableau7.face_up().get(skip_cards as usize),
-			},
+			}) => self.tableau_face_up_cards(tableau).get(skip_cards as usize),
 			KlondikePileStack::Foundation(foundation) => {
 				self.foundations[foundation as usize].last()
 			}
@@ -398,15 +401,7 @@ impl KlondikeState {
 	}
 	pub fn top_card<S: Into<KlondikePile>>(&self, src: S) -> Option<&Card> {
 		match src.into() {
-			KlondikePile::Tableau(tableau) => match tableau {
-				Tableau::Tableau1 => self.tableau1.face_up().last(),
-				Tableau::Tableau2 => self.tableau2.face_up().last(),
-				Tableau::Tableau3 => self.tableau3.face_up().last(),
-				Tableau::Tableau4 => self.tableau4.face_up().last(),
-				Tableau::Tableau5 => self.tableau5.face_up().last(),
-				Tableau::Tableau6 => self.tableau6.face_up().last(),
-				Tableau::Tableau7 => self.tableau7.face_up().last(),
-			},
+			KlondikePile::Tableau(tableau) => self.tableau_face_up_cards(tableau).last(),
 			KlondikePile::Foundation(foundation) => self.foundations[foundation as usize].last(),
 			KlondikePile::Stock => self.stock.face_up().last(),
 		}
@@ -609,7 +604,7 @@ impl Klondike {
 				KlondikePileStack::Tableau(TableauStack {
 					tableau,
 					skip_cards: SkipCards::Skip0,
-				}) if !self.state().is_tableau_face_down_empty(tableau)
+				}) if !self.state().tableau_face_down_cards(tableau).is_empty()
 					|| self
 						.state()
 						.stack_bottom_card(dst_tableau.src)
