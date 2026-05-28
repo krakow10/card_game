@@ -13,11 +13,11 @@ struct Displayed<T>(T);
 impl Display for Displayed<&Card> {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		match self.0.rank() {
-			Rank::Ace => write!(f, "A"),
-			Rank::Jack => write!(f, "J"),
-			Rank::Queen => write!(f, "Q"),
-			Rank::King => write!(f, "K"),
-			other => write!(f, "{}", other as u8),
+			Rank::Ace => write!(f, " A"),
+			Rank::Jack => write!(f, " J"),
+			Rank::Queen => write!(f, " Q"),
+			Rank::King => write!(f, " K"),
+			other => write!(f, "{:>2}", other as u8),
 		}?;
 		match self.0.suit() {
 			Suit::Spades => write!(f, "♠"),
@@ -33,7 +33,7 @@ impl Display for OptionalCard<'_> {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		match self {
 			&OptionalCard(Some(card)) => write!(f, "{}", Displayed(card)),
-			OptionalCard(None) => write!(f, "None"),
+			OptionalCard(None) => write!(f, " []"),
 		}
 	}
 }
@@ -42,16 +42,17 @@ impl Display for Displayed<&Klondike> {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		// Stock
 		let stock_count = self.0.state().stock().face_down().len();
-		writeln!(f, "Stock: {stock_count}")?;
 
 		// Hand
 		let hand = self.0.state().stock().face_up().last();
-		writeln!(f, "Hand: {}", OptionalCard(hand))?;
 
 		// Foundations
+		writeln!(f, " STOCK       F1  F2  F3  F4")?;
 		write!(
 			f,
-			"Foundations: {} {} {} {}",
+			" {:>2} {}     {} {} {} {}",
+			stock_count,
+			OptionalCard(hand),
 			OptionalCard(self.0.state().foundation1().last()),
 			OptionalCard(self.0.state().foundation2().last()),
 			OptionalCard(self.0.state().foundation3().last()),
@@ -59,28 +60,49 @@ impl Display for Displayed<&Klondike> {
 		)?;
 		writeln!(f)?;
 
-		fn write_pile<const DN: usize, const UP: usize>(
+		writeln!(f, " T1  T2  T3  T4  T5  T6  T7")?;
+
+		fn write_pile_card<const DN: usize, const UP: usize>(
 			f: &mut std::fmt::Formatter<'_>,
 			pile: &Pile<DN, UP>,
-			pile_id: usize,
+			row: usize,
 		) -> std::fmt::Result {
-			write!(f, "T{} ", pile_id)?;
-			for _ in pile.face_down() {
-				write!(f, "]")?;
+			if let Some(_card) = pile.face_down().get(row) {
+				return write!(f, " ⎾⏋"); // └┘ ⨽⨼ ⫭⫬
 			}
-			for card in pile.face_up() {
-				write!(f, "{}", Displayed(card))?;
+			let Some(row) = row.checked_sub(pile.face_down().len()) else {
+				return write!(f, "   ");
+			};
+			if let Some(card) = pile.face_up().get(row) {
+				return write!(f, "{}", Displayed(card));
 			}
-			writeln!(f)?;
-			Ok(())
+			write!(f, "   ")
 		}
-		write_pile(f, self.0.state().tableau1(), 1)?;
-		write_pile(f, self.0.state().tableau2(), 2)?;
-		write_pile(f, self.0.state().tableau3(), 3)?;
-		write_pile(f, self.0.state().tableau4(), 4)?;
-		write_pile(f, self.0.state().tableau5(), 5)?;
-		write_pile(f, self.0.state().tableau6(), 6)?;
-		write_pile(f, self.0.state().tableau7(), 7)?;
+
+		fn write_row(
+			f: &mut std::fmt::Formatter<'_>,
+			game: &Klondike,
+			row: usize,
+		) -> std::fmt::Result {
+			write_pile_card(f, game.state().tableau1(), row)?;
+			write!(f, " ")?;
+			write_pile_card(f, game.state().tableau2(), row)?;
+			write!(f, " ")?;
+			write_pile_card(f, game.state().tableau3(), row)?;
+			write!(f, " ")?;
+			write_pile_card(f, game.state().tableau4(), row)?;
+			write!(f, " ")?;
+			write_pile_card(f, game.state().tableau5(), row)?;
+			write!(f, " ")?;
+			write_pile_card(f, game.state().tableau6(), row)?;
+			write!(f, " ")?;
+			write_pile_card(f, game.state().tableau7(), row)?;
+			writeln!(f)
+		}
+
+		for row in 0..7 + 13 {
+			write_row(f, self.0, row)?;
+		}
 
 		Ok(())
 	}
