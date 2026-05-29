@@ -8,7 +8,7 @@ members = [
 resolver = "3"
 
 [workspace.dependencies]
-card_game = { version = "0.3.0", path = "card_game", registry = "Quaternions" }
+card_game = { version = "0.4.0", path = "card_game", registry = "Quaternions" }
 klondike = { version = "0.2.0", path = "klondike", registry = "Quaternions" }
 
 [workspace.lints.rust]
