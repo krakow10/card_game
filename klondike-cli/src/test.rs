@@ -1,33 +1,16 @@
-use klondike::Klondike;
 use card_game::Session;
+use klondike::Klondike;
 #[test]
 fn test_is_winnable() {
 	// is winnable
-	let is_winnable = Session::new_default(Klondike::with_seed(123)).is_winnable();
-	println!("is_winnable = {is_winnable:?}");
-}
-#[test]
-fn test_klondike() {
-	// create game session
-	let game = Klondike::with_seed(123);
-	let mut session = Session::new_default(game);
-
-	// is winnable
-	let is_winnable = session.is_winnable();
-	println!("is_winnable = {is_winnable:?}");
-
-	// play game
-	while let Some(instruction) = session.possible_instructions().next() {
-		session.process_instruction(instruction);
+	let solution_result = Session::new_default(Klondike::with_seed(124)).solve();
+	if let Ok(Some(solution)) = solution_result {
+		let win_moves = solution.clean_solution();
+		// for (i, ins) in win_moves.into_iter().enumerate() {
+		// 	println!("{i} = {:?}", ins.instruction());
+		// }
+		println!("Game is winnable with {} moves", win_moves.len());
+	} else {
+		println!("Game is not winnable");
 	}
-
-	// did win
-	let is_win = session.is_win();
-
-	// print session history
-	for (i, instruction) in session.history().iter().enumerate() {
-		println!("move {i} = {instruction:?}");
-	}
-
-	println!("is_win = {is_win}");
 }

@@ -6,11 +6,11 @@ struct ReadmeDoctests;
 use core::ops::RangeBounds;
 
 // TODO: pub struct ValidInstruction<I>(I);
-pub trait Game {
-	type Score;
-	type Stats;
-	type Config;
-	type Instruction;
+pub trait Game: Clone {
+	type Score: Clone + core::fmt::Debug;
+	type Stats: Clone + core::fmt::Debug;
+	type Config: Clone + core::fmt::Debug;
+	type Instruction: Clone + core::fmt::Debug;
 	fn score(&self, stats: &Self::Stats, config: &Self::Config) -> Self::Score;
 	fn possible_instructions(
 		&self,
@@ -313,6 +313,59 @@ impl<const CAP: usize> Pile<CAP, CAP> {
 }
 
 #[derive(Clone, Debug)]
+pub enum SolveError {
+	MovesBudgetExceeded,
+	StatesBudgetExceeded,
+}
+impl std::fmt::Display for SolveError {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		write!(f, "{self:?}")
+	}
+}
+impl std::error::Error for SolveError {}
+
+/// The solution tends to be very large with long chains of moves that go back to the same state.
+/// It is recommended to call .clean_solution() if the solution is actually going to be shown to a user.
+pub struct Solution<G: Game> {
+	solution: Vec<StateSnapshot<G>>,
+}
+impl<G: Game + Eq + core::hash::Hash> Solution<G> {
+	pub const fn raw_solution(&self) -> &[StateSnapshot<G>] {
+		self.solution.as_slice()
+	}
+	/// Repeatedly remove the largest range of moves that goes back into the same state.
+	/// This is a very expensive operation when the solution is very long!
+	pub fn clean_solution(self) -> Vec<StateSnapshot<G>> {
+		let mut history = self.solution;
+		// history includes cycles
+		let mut state_index: std::collections::HashMap<_, _> = history
+			.iter()
+			.enumerate()
+			.map(|(i, snapshot)| (snapshot.state().clone(), i))
+			.collect();
+
+		// find the longest range where the start and end are the same state
+		while let Some(longest_range) = history
+			.iter()
+			.enumerate()
+			.filter_map(|(index, snapshot)| {
+				let &last_index = state_index.get(snapshot.state())?;
+				let longness = last_index - index;
+				(longness != 0).then_some(index..last_index)
+			})
+			.max_by_key(|range| range.len())
+		{
+			history.drain(longest_range);
+			for (i, snapshot) in history.iter().enumerate() {
+				state_index.insert(snapshot.state().clone(), i);
+			}
+		}
+
+		history
+	}
+}
+
+#[derive(Clone, Debug)]
 pub enum SessionInstruction<I> {
 	Undo,
 	InnerInstruction(I),
@@ -338,12 +391,16 @@ impl<S> SessionStats<S> {
 pub struct SessionConfig<C> {
 	pub inner: C,
 	pub undo_penalty: i32,
+	pub solve_moves_budget: u64,
+	pub solve_states_budget: u64,
 }
 impl<C> SessionConfig<C> {
 	fn new_default(inner: C) -> Self {
 		Self {
 			inner,
 			undo_penalty: -15,
+			solve_moves_budget: 100_000,
+			solve_states_budget: 100_000,
 		}
 	}
 }
@@ -353,21 +410,33 @@ impl<C: Default> Default for SessionConfig<C> {
 	}
 }
 
+#[derive(Clone, Debug)]
 pub struct Session<G: Game> {
 	stats: SessionStats<G::Stats>,
 	config: SessionConfig<G::Config>,
 	state: SessionState<G>,
 }
-#[derive(Clone, Eq, Hash, PartialEq)]
-pub struct SessionState<G: Game> {
-	seed: G,
+#[derive(Clone, Debug)]
+pub struct StateSnapshot<G: Game> {
 	state: G,
-	history: Vec<G::Instruction>,
+	instruction: G::Instruction,
+}
+impl<G: Game> StateSnapshot<G> {
+	pub const fn state(&self) -> &G {
+		&self.state
+	}
+	pub const fn instruction(&self) -> &G::Instruction {
+		&self.instruction
+	}
+}
+#[derive(Clone, Debug)]
+pub struct SessionState<G: Game> {
+	state: G,
+	history: Vec<StateSnapshot<G>>,
 }
 impl<G: Game + Clone> SessionState<G> {
 	fn new(state: G) -> Self {
 		Self {
-			seed: state.clone(),
 			state,
 			history: Vec::new(),
 		}
@@ -380,9 +449,9 @@ impl<G: Game> SessionState<G> {
 }
 impl<G: Game<Score = i32>> Session<G>
 where
-	G: Clone + Eq + core::hash::Hash,
-	G::Stats: Clone + Default,
-	G::Instruction: Clone + Eq + core::hash::Hash,
+	G: Eq + core::hash::Hash,
+	G::Stats: Default,
+	G::Instruction: Eq + core::hash::Hash,
 {
 	pub fn new(state: G, config: SessionConfig<G::Config>) -> Self {
 		Self {
@@ -406,7 +475,7 @@ where
 	pub const fn config(&self) -> &SessionConfig<G::Config> {
 		&self.config
 	}
-	pub fn history(&self) -> &[G::Instruction] {
+	pub fn history(&self) -> &[StateSnapshot<G>] {
 		&self.state.history
 	}
 	pub fn undo(&mut self) {
@@ -426,12 +495,50 @@ where
 	pub fn is_win(&self) -> bool {
 		self.state.is_win()
 	}
+	/// Attempt to produce a solution.
+	pub fn solve(&self) -> Result<Option<Solution<G>>, SolveError> {
+		let mut state_moves = std::collections::HashMap::new();
+		let mut state = self.clone();
+		let mut moves = 0;
+		while !state.is_win() {
+			moves += 1;
+			if self.config.solve_moves_budget < moves {
+				return Err(SolveError::MovesBudgetExceeded);
+			}
+			if self.config.solve_states_budget < state_moves.len() as u64 {
+				return Err(SolveError::StatesBudgetExceeded);
+			}
+			// Continue existing iterator if it exists
+			let it = state_moves
+				.entry(state.state().state().clone())
+				.or_insert_with(|| {
+					state
+						.state()
+						.state()
+						.possible_instructions(&self.config().inner)
+				});
+
+			// Run one possible move
+			if let Some(instruction) = it.next() {
+				state.process_instruction(instruction);
+				continue;
+			}
+
+			// No more moves. If we can't undo we're done
+			if state.history().is_empty() {
+				return Ok(None);
+			} else {
+				state.undo();
+			}
+		}
+		Ok(Some(Solution {
+			solution: state.state.history,
+		}))
+	}
 }
 impl<G: Game<Score = i32>> Game for SessionState<G>
 where
-	G: Clone,
 	G::Stats: Default,
-	G::Instruction: Clone,
 {
 	type Score = i32;
 	type Stats = SessionStats<G::Stats>;
@@ -464,19 +571,16 @@ where
 	) {
 		match instruction {
 			SessionInstruction::Undo => {
-				// replay the entire history of the game except one move
-				self.history.pop();
-				let mut inner_stats = G::Stats::default();
-				let mut state = self.seed.clone();
-				for instruction in &self.history {
-					state.process_instruction(&mut inner_stats, &config.inner, instruction.clone());
+				if let Some(snapshot) = self.history.pop() {
+					self.state = snapshot.state;
+					stats.increment_undos();
 				}
-				self.state = state;
-				stats.inner = inner_stats;
-				stats.increment_undos();
 			}
 			SessionInstruction::InnerInstruction(instruction) => {
-				self.history.push(instruction.clone());
+				self.history.push(StateSnapshot {
+					state: self.state.clone(),
+					instruction: instruction.clone(),
+				});
 				self.state
 					.process_instruction(&mut stats.inner, &config.inner, instruction);
 			}
