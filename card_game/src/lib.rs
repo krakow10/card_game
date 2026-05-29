@@ -7,9 +7,11 @@ use core::ops::RangeBounds;
 
 // TODO: pub struct ValidInstruction<I>(I);
 pub trait Game {
+	type Score;
 	type Stats;
 	type Config;
 	type Instruction;
+	fn score(&self, stats: &Self::Stats, config: &Self::Config) -> Self::Score;
 	fn possible_instructions(
 		&self,
 		config: &Self::Config,
@@ -247,10 +249,13 @@ impl<const DN: usize, const UP: usize> Pile<DN, UP> {
 			face_up: Stack::new(),
 		}
 	}
-	pub fn flip_up(&mut self) {
+	/// Returns whether a card was flipped up.
+	pub fn flip_up(&mut self) -> bool {
 		if let Some(card) = self.face_down.pop() {
 			self.face_up.push(card);
+			return true;
 		}
+		false
 	}
 	pub fn is_empty(&self) -> bool {
 		self.face_down.is_empty() && self.face_up.is_empty()
@@ -258,25 +263,31 @@ impl<const DN: usize, const UP: usize> Pile<DN, UP> {
 	pub fn pop(&mut self) -> Option<Card> {
 		self.face_up.pop()
 	}
-	pub fn pop_flip_up(&mut self) -> Option<Card> {
-		let card = self.face_up.pop()?;
-		if self.face_up.is_empty() {
-			self.flip_up();
-		}
-		Some(card)
+	/// Returns the popped card and whether a card was flipped up.
+	pub fn pop_flip_up(&mut self) -> (Option<Card>, bool) {
+		let card = match self.face_up.pop() {
+			Some(card) => card,
+			None => return (None, false),
+		};
+		let did_flip_up = if self.face_up.is_empty() {
+			self.flip_up()
+		} else {
+			false
+		};
+		(Some(card), did_flip_up)
 	}
 	pub fn take_range<R: RangeBounds<usize>>(&mut self, range: R) -> Stack<UP> {
-		// if self.face_up.get(range).is_none() {
-		// 	return None;
-		// }
 		self.face_up.take_range(range)
 	}
-	pub fn take_range_flip_up<R: RangeBounds<usize>>(&mut self, range: R) -> Stack<UP> {
+	/// Returns the card range and whether a card was flipped up.
+	pub fn take_range_flip_up<R: RangeBounds<usize>>(&mut self, range: R) -> (Stack<UP>, bool) {
 		let cards = self.take_range(range);
-		if self.face_up.is_empty() {
-			self.flip_up();
-		}
-		cards
+		let did_flip_up = if self.face_up.is_empty() {
+			self.flip_up()
+		} else {
+			false
+		};
+		(cards, did_flip_up)
 	}
 	pub fn push(&mut self, card: Card) {
 		self.face_up.push(card);
@@ -309,24 +320,42 @@ pub enum SessionInstruction<I> {
 
 #[derive(Clone, Debug, Default)]
 pub struct SessionStats<S> {
-	inner_stats: S,
-	undos: usize,
+	inner: S,
+	undos: u32,
 }
 impl<S> SessionStats<S> {
 	pub const fn stats(&self) -> &S {
-		&self.inner_stats
+		&self.inner
 	}
 	const fn increment_undos(&mut self) {
 		self.undos += 1;
 	}
-	pub const fn undos(&self) -> usize {
+	pub const fn undos(&self) -> u32 {
 		self.undos
+	}
+}
+#[derive(Clone, Debug)]
+pub struct SessionConfig<C> {
+	pub inner: C,
+	pub undo_penalty: i32,
+}
+impl<C> SessionConfig<C> {
+	fn new_default(inner: C) -> Self {
+		Self {
+			inner,
+			undo_penalty: -15,
+		}
+	}
+}
+impl<C: Default> Default for SessionConfig<C> {
+	fn default() -> Self {
+		Self::new_default(C::default())
 	}
 }
 
 pub struct Session<G: Game> {
 	stats: SessionStats<G::Stats>,
-	config: G::Config,
+	config: SessionConfig<G::Config>,
 	state: SessionState<G>,
 }
 #[derive(Clone, Eq, Hash, PartialEq)]
@@ -344,13 +373,18 @@ impl<G: Game + Clone> SessionState<G> {
 		}
 	}
 }
-impl<G: Game> Session<G>
+impl<G: Game> SessionState<G> {
+	pub const fn state(&self) -> &G {
+		&self.state
+	}
+}
+impl<G: Game<Score = i32>> Session<G>
 where
 	G: Clone + Eq + core::hash::Hash,
 	G::Stats: Clone + Default,
 	G::Instruction: Clone + Eq + core::hash::Hash,
 {
-	pub fn new(state: G, config: G::Config) -> Self {
+	pub fn new(state: G, config: SessionConfig<G::Config>) -> Self {
 		Self {
 			stats: SessionStats::default(),
 			config,
@@ -366,10 +400,10 @@ where
 	pub const fn stats(&self) -> &SessionStats<G::Stats> {
 		&self.stats
 	}
-	pub const fn state(&self) -> &G {
-		&self.state.state
+	pub const fn state(&self) -> &SessionState<G> {
+		&self.state
 	}
-	pub const fn config(&self) -> &G::Config {
+	pub const fn config(&self) -> &SessionConfig<G::Config> {
 		&self.config
 	}
 	pub fn history(&self) -> &[G::Instruction] {
@@ -380,7 +414,7 @@ where
 			.process_instruction(&mut self.stats, &self.config, SessionInstruction::Undo)
 	}
 	pub fn possible_instructions(&self) -> impl Iterator<Item = G::Instruction> + use<G> {
-		self.state.state.possible_instructions(&self.config)
+		self.state.state.possible_instructions(&self.config.inner)
 	}
 	pub fn process_instruction(&mut self, instruction: G::Instruction) {
 		self.state.process_instruction(
@@ -393,28 +427,32 @@ where
 		self.state.is_win()
 	}
 }
-impl<G: Game> Game for SessionState<G>
+impl<G: Game<Score = i32>> Game for SessionState<G>
 where
 	G: Clone,
 	G::Stats: Default,
 	G::Instruction: Clone,
 {
+	type Score = i32;
 	type Stats = SessionStats<G::Stats>;
-	type Config = G::Config;
+	type Config = SessionConfig<G::Config>;
 	type Instruction = SessionInstruction<G::Instruction>;
+	fn score(&self, stats: &Self::Stats, config: &Self::Config) -> Self::Score {
+		self.state.score(&stats.inner, &config.inner) + stats.undos as i32 * config.undo_penalty
+	}
 	fn possible_instructions(
 		&self,
 		config: &Self::Config,
 	) -> impl Iterator<Item = Self::Instruction> + use<G> {
 		self.state
-			.possible_instructions(config)
+			.possible_instructions(&config.inner)
 			.map(SessionInstruction::InnerInstruction)
 	}
 	fn is_instruction_valid(&self, config: &Self::Config, instruction: Self::Instruction) -> bool {
 		match instruction {
 			SessionInstruction::Undo => !self.history.is_empty(),
 			SessionInstruction::InnerInstruction(instruction) => {
-				self.state.is_instruction_valid(config, instruction)
+				self.state.is_instruction_valid(&config.inner, instruction)
 			}
 		}
 	}
@@ -431,16 +469,16 @@ where
 				let mut inner_stats = G::Stats::default();
 				let mut state = self.seed.clone();
 				for instruction in &self.history {
-					state.process_instruction(&mut inner_stats, config, instruction.clone());
+					state.process_instruction(&mut inner_stats, &config.inner, instruction.clone());
 				}
 				self.state = state;
-				stats.inner_stats = inner_stats;
+				stats.inner = inner_stats;
 				stats.increment_undos();
 			}
 			SessionInstruction::InnerInstruction(instruction) => {
 				self.history.push(instruction.clone());
 				self.state
-					.process_instruction(&mut stats.inner_stats, config, instruction);
+					.process_instruction(&mut stats.inner, &config.inner, instruction);
 			}
 		}
 	}

@@ -7,7 +7,7 @@ use card_game::{Card, Game, Pile, Rank, Stack};
 #[cfg(doctest)]
 struct ReadmeDoctests;
 
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub enum DrawStockConfig {
 	#[default]
 	DrawOne = 1,
@@ -21,42 +21,96 @@ pub enum MoveFromFoundationConfig {
 	Disallowed,
 }
 
+#[derive(Clone, Copy, Debug)]
+pub struct ScoringConfig {
+	pub move_to_foundation: i32,
+	pub flip_up_bonus: i32,
+	pub move_to_tableau: i32,
+	pub move_from_foundation: i32,
+	pub recycle: i32,
+}
+impl ScoringConfig {
+	pub const DEFAULT: Self = Self {
+		move_to_foundation: 10,
+		flip_up_bonus: 5,
+		move_to_tableau: 5,
+		move_from_foundation: -15,
+		recycle: 0,
+	};
+}
+impl Default for ScoringConfig {
+	fn default() -> Self {
+		Self::DEFAULT
+	}
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct KlondikeConfig {
 	pub draw_stock: DrawStockConfig,
 	pub move_from_foundation: MoveFromFoundationConfig,
+	pub scoring: ScoringConfig,
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct KlondikeStats {
-	score: usize,
-	recycle_count: usize,
-	moves: usize,
+	moves: u32,
+	move_to_foundation_count: u32,
+	flip_up_bonus_count: u32,
+	move_to_tableau_count: u32,
+	move_from_foundation_count: u32,
+	recycle_count: u32,
 }
 impl KlondikeStats {
 	pub const fn new() -> Self {
 		KlondikeStats {
-			score: 0,
-			recycle_count: 0,
 			moves: 0,
+			move_to_foundation_count: 0,
+			flip_up_bonus_count: 0,
+			move_to_tableau_count: 0,
+			move_from_foundation_count: 0,
+			recycle_count: 0,
 		}
 	}
-	pub const fn score(&self) -> usize {
-		self.score
+	pub const fn score(&self, config: &ScoringConfig) -> i32 {
+		self.move_to_foundation_count as i32 * config.move_to_foundation
+			+ self.flip_up_bonus_count as i32 * config.flip_up_bonus
+			+ self.move_to_tableau_count as i32 * config.move_to_tableau
+			+ self.move_from_foundation_count as i32 * config.move_from_foundation
+			+ self.recycle_count as i32 * config.recycle
 	}
-	pub const fn recycle_count(&self) -> usize {
-		self.recycle_count
-	}
-	pub const fn moves(&self) -> usize {
+	pub const fn moves(&self) -> u32 {
 		self.moves
 	}
+	pub const fn move_to_foundation_count(&self) -> u32 {
+		self.move_to_foundation_count
+	}
+	pub const fn flip_up_bonus_count(&self) -> u32 {
+		self.flip_up_bonus_count
+	}
+	pub const fn move_to_tableau_count(&self) -> u32 {
+		self.move_to_tableau_count
+	}
+	pub const fn move_from_foundation_count(&self) -> u32 {
+		self.move_from_foundation_count
+	}
+	pub const fn recycle_count(&self) -> u32 {
+		self.recycle_count
+	}
 	/// A card was moved to a foundation.
-	const fn increment_score_foundation(&mut self) {
-		self.score += 10;
+	const fn increment_move_to_foundation(&mut self) {
+		self.move_to_foundation_count += 1;
+	}
+	/// A card on the tableau was flipped up.
+	const fn increment_flip_up_bonus(&mut self) {
+		self.flip_up_bonus_count += 1;
 	}
 	/// A card was moved from stock to tableau.
-	const fn increment_score_tableau(&mut self) {
-		self.score += 5;
+	const fn increment_move_to_tableau(&mut self) {
+		self.move_to_tableau_count += 1;
+	}
+	/// A card was moved from foundation to tableau.
+	const fn increment_move_from_foundation(&mut self) {
+		self.move_from_foundation_count += 1;
 	}
 	const fn increment_recycle_count(&mut self) {
 		self.recycle_count += 1;
@@ -414,7 +468,7 @@ impl KlondikeState {
 			KlondikePile::Stock => self.stock.face_up().last(),
 		}
 	}
-	fn take_stack(&mut self, src: KlondikePileStack) -> Stack<13> {
+	fn take_stack(&mut self, src: KlondikePileStack) -> (Stack<13>, bool) {
 		match src {
 			KlondikePileStack::Tableau(TableauStack {
 				tableau,
@@ -428,13 +482,14 @@ impl KlondikeState {
 				Tableau::Tableau6 => self.tableau6.take_range_flip_up(skip_cards as usize..),
 				Tableau::Tableau7 => self.tableau7.take_range_flip_up(skip_cards as usize..),
 			},
-			KlondikePileStack::Foundation(foundation) => {
-				Stack::from_iter(self.foundations[foundation as usize].pop())
-			}
-			KlondikePileStack::Stock => Stack::from_iter(self.stock.pop()),
+			KlondikePileStack::Foundation(foundation) => (
+				Stack::from_iter(self.foundations[foundation as usize].pop()),
+				false,
+			),
+			KlondikePileStack::Stock => (Stack::from_iter(self.stock.pop()), false),
 		}
 	}
-	fn take_top_card<S: Into<KlondikePile>>(&mut self, src: S) -> Option<Card> {
+	fn take_top_card<S: Into<KlondikePile>>(&mut self, src: S) -> (Option<Card>, bool) {
 		match src.into() {
 			KlondikePile::Tableau(tableau) => match tableau {
 				Tableau::Tableau1 => self.tableau1.pop_flip_up(),
@@ -445,8 +500,10 @@ impl KlondikeState {
 				Tableau::Tableau6 => self.tableau6.pop_flip_up(),
 				Tableau::Tableau7 => self.tableau7.pop_flip_up(),
 			},
-			KlondikePile::Foundation(foundation) => self.foundations[foundation as usize].pop(),
-			KlondikePile::Stock => self.stock.pop(),
+			KlondikePile::Foundation(foundation) => {
+				(self.foundations[foundation as usize].pop(), false)
+			}
+			KlondikePile::Stock => (self.stock.pop(), false),
 		}
 	}
 	fn extend_foundation<I: IntoIterator<Item = Card>>(
@@ -654,9 +711,13 @@ impl Klondike {
 }
 
 impl Game for Klondike {
+	type Score = i32;
 	type Stats = KlondikeStats;
 	type Config = KlondikeConfig;
 	type Instruction = KlondikeInstruction;
+	fn score(&self, stats: &Self::Stats, config: &Self::Config) -> Self::Score {
+		stats.score(&config.scoring)
+	}
 	fn possible_instructions(
 		&self,
 		config: &Self::Config,
@@ -690,16 +751,24 @@ impl Game for Klondike {
 			}
 			// Move a card from anywhere to a foundation
 			KlondikeInstruction::DstFoundation(DstFoundation { src, foundation }) => {
-				stats.increment_score_foundation();
-				let card = self.state.take_top_card(src);
+				stats.increment_move_to_foundation();
+				let (card, did_flip_up) = self.state.take_top_card(src);
+				if did_flip_up {
+					stats.increment_flip_up_bonus();
+				}
 				self.state.extend_foundation(foundation, card);
 			}
 			// Move a stack of cards from anywhere to a tableau
 			KlondikeInstruction::DstTableau(DstTableau { src, tableau }) => {
-				if src == KlondikePileStack::Stock {
-					stats.increment_score_tableau();
+				match src {
+					KlondikePileStack::Stock => stats.increment_move_to_tableau(),
+					KlondikePileStack::Foundation(_) => stats.increment_move_from_foundation(),
+					_ => {}
 				}
-				let cards = self.state.take_stack(src);
+				let (cards, did_flip_up) = self.state.take_stack(src);
+				if did_flip_up {
+					stats.increment_flip_up_bonus();
+				}
 				self.state.extend_tableau(tableau, cards);
 			}
 		}

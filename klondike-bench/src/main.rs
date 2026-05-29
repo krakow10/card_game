@@ -1,5 +1,5 @@
 use card_game::Game;
-use klondike::{Klondike, KlondikeConfig, KlondikeStats, Rng};
+use klondike::{Klondike, KlondikeConfig, KlondikeStats, Rng, ScoringConfig};
 
 const MAX_MOVES: usize = 250;
 
@@ -10,13 +10,14 @@ fn play_to_win(rng: &mut Rng) -> Option<KlondikeStats> {
 	const CONFIG: KlondikeConfig = KlondikeConfig {
 		draw_stock: klondike::DrawStockConfig::DrawOne,
 		move_from_foundation: klondike::MoveFromFoundationConfig::Allowed,
+		scoring: ScoringConfig::DEFAULT,
 	};
 	// play game a bit
 	while let Some(instruction) = game.get_auto_move(&CONFIG)
 		&& !game.is_win()
 	{
 		// quit before 250 moves
-		if MAX_MOVES < stats.moves() + 1 {
+		if (MAX_MOVES as u32) < stats.moves() + 1 {
 			return None;
 		}
 
@@ -35,9 +36,9 @@ fn main() {
 	for _ in 0..GAMES {
 		if let Some(stats) = play_to_win(&mut rng) {
 			wins += 1;
-			score_tally[stats.score() / 5] += 1;
-			recycle_tally[stats.recycle_count()] += 1;
-			moves_tally[stats.moves()] += 1;
+			score_tally[(stats.score(&ScoringConfig::DEFAULT) / 5) as usize] += 1;
+			recycle_tally[stats.recycle_count() as usize] += 1;
+			moves_tally[stats.moves() as usize] += 1;
 		}
 	}
 	println!("score_tally={score_tally:?}");

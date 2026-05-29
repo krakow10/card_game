@@ -1,7 +1,7 @@
-use card_game::{Card, Game, Pile, Rank, Session, SessionStats, Suit};
+use card_game::{Card, Game, Pile, Rank, Session, Suit};
 use klondike::{
 	DstFoundation, DstTableau, Foundation, Klondike, KlondikeConfig, KlondikeInstruction,
-	KlondikePile, KlondikePileStack, KlondikeStats, SkipCards, Tableau, TableauStack,
+	KlondikePile, KlondikePileStack, SkipCards, Tableau, TableauStack,
 };
 
 // #[cfg(test)]
@@ -108,15 +108,16 @@ impl Display for Displayed<&Klondike> {
 	}
 }
 
-impl Display for Displayed<&SessionStats<KlondikeStats>> {
+struct DisplayStats<'a>(&'a Session<Klondike>);
+impl Display for DisplayStats<'_> {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		write!(
 			f,
 			"recycles: {} moves: {} undos: {} score:{}",
-			self.0.stats().recycle_count(),
-			self.0.stats().moves(),
-			self.0.undos(),
-			self.0.stats().score() as isize - self.0.undos() as isize * 15,
+			self.0.stats().stats().recycle_count(),
+			self.0.stats().stats().moves(),
+			self.0.stats().undos(),
+			self.0.state().score(self.0.stats(), &self.0.config()),
 		)
 	}
 }
@@ -248,9 +249,9 @@ fn main() -> Result<(), std::io::Error> {
 	loop {
 		// display stats
 		println!("seed: {seed} ");
-		println!("{}", Displayed(session.stats()));
+		println!("{}", DisplayStats(&session));
 		// display game
-		println!("{}", Displayed(session.state()));
+		println!("{}", Displayed(session.state().state()));
 
 		// parse input
 		input.clear();
@@ -274,7 +275,11 @@ fn main() -> Result<(), std::io::Error> {
 				}
 			}
 			SessionInstruction::Auto => {
-				if let Some(instruction) = session.state().get_auto_move(session.config()) {
+				if let Some(instruction) = session
+					.state()
+					.state()
+					.get_auto_move(&session.config().inner)
+				{
 					session.process_instruction(instruction);
 				} else {
 					println!("No valid moves!");
@@ -284,9 +289,11 @@ fn main() -> Result<(), std::io::Error> {
 				session.process_instruction(KlondikeInstruction::RotateStock)
 			}
 			SessionInstruction::Klondike(naive_instruction) => {
-				if let Some(instruction) =
-					find_valid_instruction(session.config(), session.state(), naive_instruction)
-				{
+				if let Some(instruction) = find_valid_instruction(
+					&session.config().inner,
+					session.state().state(),
+					naive_instruction,
+				) {
 					session.process_instruction(instruction);
 				} else {
 					println!("Invalid move!");
