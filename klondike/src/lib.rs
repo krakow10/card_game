@@ -377,54 +377,55 @@ const fn sum(n: usize) -> usize {
 	n * (n + 1) / 2
 }
 const STOCK: usize = 52 - sum(TABLEAUS);
+const NUM_RANKS: usize = Rank::RANKS.len();
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct KlondikeState {
 	stock: Pile<STOCK, STOCK>,
-	foundations: [Stack<13>; 4],
-	tableau1: Pile<0, 13>,
-	tableau2: Pile<1, 13>,
-	tableau3: Pile<2, 13>,
-	tableau4: Pile<3, 13>,
-	tableau5: Pile<4, 13>,
-	tableau6: Pile<5, 13>,
-	tableau7: Pile<6, 13>,
+	foundations: [Stack<NUM_RANKS>; 4],
+	tableau1: Pile<0, NUM_RANKS>,
+	tableau2: Pile<1, NUM_RANKS>,
+	tableau3: Pile<2, NUM_RANKS>,
+	tableau4: Pile<3, NUM_RANKS>,
+	tableau5: Pile<4, NUM_RANKS>,
+	tableau6: Pile<5, NUM_RANKS>,
+	tableau7: Pile<6, NUM_RANKS>,
 }
 impl KlondikeState {
 	pub const fn stock(&self) -> &Pile<STOCK, STOCK> {
 		&self.stock
 	}
-	pub const fn foundation1(&self) -> &Stack<13> {
+	pub const fn foundation1(&self) -> &Stack<NUM_RANKS> {
 		&self.foundations[Foundation::Foundation1 as usize]
 	}
-	pub const fn foundation2(&self) -> &Stack<13> {
+	pub const fn foundation2(&self) -> &Stack<NUM_RANKS> {
 		&self.foundations[Foundation::Foundation2 as usize]
 	}
-	pub const fn foundation3(&self) -> &Stack<13> {
+	pub const fn foundation3(&self) -> &Stack<NUM_RANKS> {
 		&self.foundations[Foundation::Foundation3 as usize]
 	}
-	pub const fn foundation4(&self) -> &Stack<13> {
+	pub const fn foundation4(&self) -> &Stack<NUM_RANKS> {
 		&self.foundations[Foundation::Foundation4 as usize]
 	}
-	pub const fn tableau1(&self) -> &Pile<0, 13> {
+	pub const fn tableau1(&self) -> &Pile<0, NUM_RANKS> {
 		&self.tableau1
 	}
-	pub const fn tableau2(&self) -> &Pile<1, 13> {
+	pub const fn tableau2(&self) -> &Pile<1, NUM_RANKS> {
 		&self.tableau2
 	}
-	pub const fn tableau3(&self) -> &Pile<2, 13> {
+	pub const fn tableau3(&self) -> &Pile<2, NUM_RANKS> {
 		&self.tableau3
 	}
-	pub const fn tableau4(&self) -> &Pile<3, 13> {
+	pub const fn tableau4(&self) -> &Pile<3, NUM_RANKS> {
 		&self.tableau4
 	}
-	pub const fn tableau5(&self) -> &Pile<4, 13> {
+	pub const fn tableau5(&self) -> &Pile<4, NUM_RANKS> {
 		&self.tableau5
 	}
-	pub const fn tableau6(&self) -> &Pile<5, 13> {
+	pub const fn tableau6(&self) -> &Pile<5, NUM_RANKS> {
 		&self.tableau6
 	}
-	pub const fn tableau7(&self) -> &Pile<6, 13> {
+	pub const fn tableau7(&self) -> &Pile<6, NUM_RANKS> {
 		&self.tableau7
 	}
 	pub fn tableau_face_down_cards(&self, tableau: Tableau) -> &[Card] {
@@ -474,7 +475,7 @@ impl KlondikeState {
 			KlondikePile::Stock => self.stock.face_up().last(),
 		}
 	}
-	fn take_stack_flip_up(&mut self, src: KlondikePileStack) -> (Stack<13>, bool) {
+	fn take_stack_flip_up(&mut self, src: KlondikePileStack) -> (Stack<NUM_RANKS>, bool) {
 		match src {
 			KlondikePileStack::Tableau(TableauStack {
 				tableau,
@@ -630,7 +631,7 @@ impl Klondike {
 		let mut deck = deck.into_iter();
 
 		// generate tableaus
-		fn pile<const DN: usize>(deck: &mut <Stack<52> as IntoIterator>::IntoIter) -> Pile<DN, 13> {
+		fn pile<const DN: usize>(deck: &mut <Stack<52> as IntoIterator>::IntoIter) -> Pile<DN, NUM_RANKS> {
 			let stack = Stack::from_iter(deck.take(DN));
 			let mut pile = Pile::new_face_down(stack);
 			pile.push(deck.next().unwrap());
