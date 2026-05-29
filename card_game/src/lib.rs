@@ -498,9 +498,9 @@ where
 	/// Attempt to produce a solution.
 	pub fn solve(&self) -> Result<Option<Solution<G>>, SolveError> {
 		let mut state_moves = std::collections::HashMap::new();
-		let mut state = self.clone();
+		let mut session = self.clone();
 		let mut moves = 0;
-		while !state.is_win() {
+		while !session.is_win() {
 			moves += 1;
 			if self.config.solve_moves_budget < moves {
 				return Err(SolveError::MovesBudgetExceeded);
@@ -510,9 +510,9 @@ where
 			}
 			// Continue existing iterator if it exists
 			let it = state_moves
-				.entry(state.state().state().clone())
+				.entry(session.state().state().clone())
 				.or_insert_with(|| {
-					state
+					session
 						.state()
 						.state()
 						.possible_instructions(&self.config().inner)
@@ -520,19 +520,19 @@ where
 
 			// Run one possible move
 			if let Some(instruction) = it.next() {
-				state.process_instruction(instruction);
+				session.process_instruction(instruction);
 				continue;
 			}
 
 			// No more moves. If we can't undo we're done
-			if state.history().is_empty() {
+			if session.history().is_empty() {
 				return Ok(None);
 			} else {
-				state.undo();
+				session.undo();
 			}
 		}
 		Ok(Some(Solution {
-			solution: state.state.history,
+			solution: session.state.history,
 		}))
 	}
 }
