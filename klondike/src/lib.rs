@@ -14,9 +14,17 @@ pub enum DrawStockConfig {
 	DrawThree = 3,
 }
 
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum MoveFromFoundationConfig {
+	#[default]
+	Allowed,
+	Disallowed,
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct KlondikeConfig {
 	pub draw_stock: DrawStockConfig,
+	pub move_from_foundation: MoveFromFoundationConfig,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -459,7 +467,11 @@ impl KlondikeState {
 			Tableau::Tableau7 => self.tableau7.extend(cards),
 		}
 	}
-	pub fn is_instruction_valid(&self, instruction: KlondikeInstruction) -> bool {
+	pub fn is_instruction_valid(
+		&self,
+		config: &KlondikeConfig,
+		instruction: KlondikeInstruction,
+	) -> bool {
 		match instruction {
 			// Stock -> Stock draws a card or resets the stock
 			KlondikeInstruction::RotateStock => {
@@ -488,6 +500,11 @@ impl KlondikeState {
 			}
 			// other = move to tableau
 			KlondikeInstruction::DstTableau(dst_tableau) => {
+				if config.move_from_foundation == MoveFromFoundationConfig::Disallowed
+					&& let KlondikePileStack::Foundation(_) = dst_tableau.src
+				{
+					return false;
+				}
 				// get the cards
 				if let Some(src_card) = self.stack_bottom_card(dst_tableau.src) {
 					match self.top_card(dst_tableau.tableau) {
@@ -620,15 +637,15 @@ impl Klondike {
 		}
 	}
 	/// A single move that usually makes progress towards a winning game
-	pub fn get_auto_move(&self) -> Option<KlondikeInstruction> {
-		self.possible_instructions()
+	pub fn get_auto_move(&self, config: &KlondikeConfig) -> Option<KlondikeInstruction> {
+		self.possible_instructions(config)
 			.filter(|ins| !ins.is_useless())
 			.min_by_key(|ins| self.instruction_priority(ins))
 	}
 	/// A list of possible moves with useless moves filtered out and sorted by a simple priority function
-	pub fn get_sorted_moves(&self) -> Vec<KlondikeInstruction> {
+	pub fn get_sorted_moves(&self, config: &KlondikeConfig) -> Vec<KlondikeInstruction> {
 		let mut useful_moves: Vec<_> = self
-			.possible_instructions()
+			.possible_instructions(config)
 			.filter(|ins| !ins.is_useless())
 			.collect();
 		useful_moves.sort_by_key(|ins| self.instruction_priority(ins));
@@ -640,12 +657,17 @@ impl Game for Klondike {
 	type Stats = KlondikeStats;
 	type Config = KlondikeConfig;
 	type Instruction = KlondikeInstruction;
-	fn possible_instructions(&self) -> impl Iterator<Item = Self::Instruction> + use<> {
+	fn possible_instructions(
+		&self,
+		config: &Self::Config,
+	) -> impl Iterator<Item = Self::Instruction> + use<> {
 		let state = self.state.clone();
-		KlondikeIter::new().filter(move |&instruction| state.is_instruction_valid(instruction))
+		let config = config.clone();
+		KlondikeIter::new()
+			.filter(move |&instruction| state.is_instruction_valid(&config, instruction))
 	}
-	fn is_instruction_valid(&self, _config: &Self::Config, instruction: Self::Instruction) -> bool {
-		self.state.is_instruction_valid(instruction)
+	fn is_instruction_valid(&self, config: &Self::Config, instruction: Self::Instruction) -> bool {
+		self.state.is_instruction_valid(config, instruction)
 	}
 	fn process_instruction(
 		&mut self,

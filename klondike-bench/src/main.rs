@@ -9,9 +9,10 @@ fn play_to_win(rng: &mut Rng) -> Option<KlondikeStats> {
 	let mut stats = KlondikeStats::new();
 	const CONFIG: KlondikeConfig = KlondikeConfig {
 		draw_stock: klondike::DrawStockConfig::DrawOne,
+		move_from_foundation: klondike::MoveFromFoundationConfig::Allowed,
 	};
 	// play game a bit
-	while let Some(instruction) = game.get_auto_move()
+	while let Some(instruction) = game.get_auto_move(&CONFIG)
 		&& !game.is_win()
 	{
 		// quit before 250 moves

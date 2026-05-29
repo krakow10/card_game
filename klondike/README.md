@@ -7,14 +7,15 @@ Klondike
 
 ```rust
 use card_game::Session;
-use klondike::Klondike;
+use klondike::{Klondike, KlondikeConfig};
 
 // create game session
 let game = Klondike::with_seed(123);
+let config = KlondikeConfig::default();
 let mut session = Session::new_default(game);
 
 // play game a bit
-while let Some(instruction) = session.state().get_auto_move() {
+while let Some(instruction) = session.state().get_auto_move(&config) {
 	session.process_instruction(instruction);
 
 	// quit after 200 moves or win

@@ -10,7 +10,10 @@ pub trait Game {
 	type Stats;
 	type Config;
 	type Instruction;
-	fn possible_instructions(&self) -> impl Iterator<Item = Self::Instruction> + use<Self>;
+	fn possible_instructions(
+		&self,
+		config: &Self::Config,
+	) -> impl Iterator<Item = Self::Instruction> + use<Self>;
 	fn is_instruction_valid(&self, config: &Self::Config, instruction: Self::Instruction) -> bool;
 	fn process_instruction(
 		&mut self,
@@ -377,7 +380,7 @@ where
 			.process_instruction(&mut self.stats, &self.config, SessionInstruction::Undo)
 	}
 	pub fn possible_instructions(&self) -> impl Iterator<Item = G::Instruction> + use<G> {
-		self.state.state.possible_instructions()
+		self.state.state.possible_instructions(&self.config)
 	}
 	pub fn process_instruction(&mut self, instruction: G::Instruction) {
 		self.state.process_instruction(
@@ -399,9 +402,12 @@ where
 	type Stats = SessionStats<G::Stats>;
 	type Config = G::Config;
 	type Instruction = SessionInstruction<G::Instruction>;
-	fn possible_instructions(&self) -> impl Iterator<Item = Self::Instruction> + use<G> {
+	fn possible_instructions(
+		&self,
+		config: &Self::Config,
+	) -> impl Iterator<Item = Self::Instruction> + use<G> {
 		self.state
-			.possible_instructions()
+			.possible_instructions(config)
 			.map(SessionInstruction::InnerInstruction)
 	}
 	fn is_instruction_valid(&self, config: &Self::Config, instruction: Self::Instruction) -> bool {

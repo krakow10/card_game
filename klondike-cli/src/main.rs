@@ -274,7 +274,7 @@ fn main() -> Result<(), std::io::Error> {
 				}
 			}
 			SessionInstruction::Auto => {
-				if let Some(instruction) = session.state().get_auto_move() {
+				if let Some(instruction) = session.state().get_auto_move(session.config()) {
 					session.process_instruction(instruction);
 				} else {
 					println!("No valid moves!");
