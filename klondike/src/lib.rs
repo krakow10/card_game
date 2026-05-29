@@ -461,10 +461,16 @@ impl KlondikeState {
 			KlondikePileStack::Stock => self.stock.face_up().last(),
 		}
 	}
-	pub fn top_card<S: Into<KlondikePile>>(&self, src: S) -> Option<&Card> {
-		match src.into() {
-			KlondikePile::Tableau(tableau) => self.tableau_face_up_cards(tableau).last(),
-			KlondikePile::Foundation(foundation) => self.foundations[foundation as usize].last(),
+	pub fn tableau_top_card(&self, tableau: Tableau) -> Option<&Card> {
+		self.tableau_face_up_cards(tableau).last()
+	}
+	pub fn foundation_top_card(&self, foundation: Foundation) -> Option<&Card> {
+		self.foundations[foundation as usize].last()
+	}
+	pub fn top_card(&self, pile: KlondikePile) -> Option<&Card> {
+		match pile {
+			KlondikePile::Tableau(tableau) => self.tableau_top_card(tableau),
+			KlondikePile::Foundation(foundation) => self.foundation_top_card(foundation),
 			KlondikePile::Stock => self.stock.face_up().last(),
 		}
 	}
@@ -489,8 +495,8 @@ impl KlondikeState {
 			KlondikePileStack::Stock => (Stack::from_iter(self.stock.pop()), false),
 		}
 	}
-	fn take_top_card<S: Into<KlondikePile>>(&mut self, src: S) -> (Option<Card>, bool) {
-		match src.into() {
+	fn take_top_card(&mut self, pile: KlondikePile) -> (Option<Card>, bool) {
+		match pile {
 			KlondikePile::Tableau(tableau) => match tableau {
 				Tableau::Tableau1 => self.tableau1.pop_flip_up(),
 				Tableau::Tableau2 => self.tableau2.pop_flip_up(),
@@ -540,7 +546,7 @@ impl KlondikeState {
 			KlondikeInstruction::DstFoundation(dst_foundation) => {
 				// get the top cards
 				if let Some(src_card) = self.top_card(dst_foundation.src) {
-					match self.top_card(dst_foundation.foundation) {
+					match self.foundation_top_card(dst_foundation.foundation) {
 						// destination card exists
 						Some(dst_card) => {
 							// suit matches?
@@ -564,7 +570,7 @@ impl KlondikeState {
 				}
 				// get the cards
 				if let Some(src_card) = self.stack_bottom_card(dst_tableau.src) {
-					match self.top_card(dst_tableau.tableau) {
+					match self.tableau_top_card(dst_tableau.tableau) {
 						// destination card exists
 						Some(dst_card) => {
 							// red-ness is opposite?
