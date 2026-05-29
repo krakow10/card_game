@@ -474,7 +474,7 @@ impl KlondikeState {
 			KlondikePile::Stock => self.stock.face_up().last(),
 		}
 	}
-	fn take_stack(&mut self, src: KlondikePileStack) -> (Stack<13>, bool) {
+	fn take_stack_flip_up(&mut self, src: KlondikePileStack) -> (Stack<13>, bool) {
 		match src {
 			KlondikePileStack::Tableau(TableauStack {
 				tableau,
@@ -495,7 +495,7 @@ impl KlondikeState {
 			KlondikePileStack::Stock => (Stack::from_iter(self.stock.pop()), false),
 		}
 	}
-	fn take_top_card(&mut self, pile: KlondikePile) -> (Option<Card>, bool) {
+	fn take_top_card_flip_up(&mut self, pile: KlondikePile) -> (Option<Card>, bool) {
 		match pile {
 			KlondikePile::Tableau(tableau) => match tableau {
 				Tableau::Tableau1 => self.tableau1.pop_flip_up(),
@@ -762,7 +762,7 @@ impl Game for Klondike {
 			// Move a card from anywhere to a foundation
 			KlondikeInstruction::DstFoundation(DstFoundation { src, foundation }) => {
 				stats.increment_move_to_foundation();
-				let (card, did_flip_up) = self.state.take_top_card(src);
+				let (card, did_flip_up) = self.state.take_top_card_flip_up(src);
 				if did_flip_up {
 					stats.increment_flip_up_bonus();
 				}
@@ -775,7 +775,7 @@ impl Game for Klondike {
 					KlondikePileStack::Foundation(_) => stats.increment_move_from_foundation(),
 					_ => {}
 				}
-				let (cards, did_flip_up) = self.state.take_stack(src);
+				let (cards, did_flip_up) = self.state.take_stack_flip_up(src);
 				if did_flip_up {
 					stats.increment_flip_up_bonus();
 				}
