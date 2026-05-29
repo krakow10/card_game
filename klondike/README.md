@@ -15,7 +15,7 @@ let config = KlondikeConfig::default();
 let mut session = Session::new_default(game);
 
 // play game a bit
-while let Some(instruction) = session.state().get_auto_move(&config) {
+while let Some(instruction) = session.state().state().get_auto_move(&config) {
 	session.process_instruction(instruction);
 
 	// quit after 200 moves or win
