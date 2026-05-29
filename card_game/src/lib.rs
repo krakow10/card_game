@@ -313,6 +313,18 @@ impl<const CAP: usize> Pile<CAP, CAP> {
 }
 
 #[derive(Clone, Debug)]
+pub enum SolveError {
+	MovesBudgetExceeded,
+	StatesBudgetExceeded,
+}
+impl std::fmt::Display for SolveError {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		write!(f, "{self:?}")
+	}
+}
+impl std::error::Error for SolveError {}
+
+#[derive(Clone, Debug)]
 pub enum SessionInstruction<I> {
 	Undo,
 	InnerInstruction(I),
@@ -338,12 +350,16 @@ impl<S> SessionStats<S> {
 pub struct SessionConfig<C> {
 	pub inner: C,
 	pub undo_penalty: i32,
+	pub solve_moves_budget: u64,
+	pub solve_states_budget: u64,
 }
 impl<C> SessionConfig<C> {
 	fn new_default(inner: C) -> Self {
 		Self {
 			inner,
 			undo_penalty: -15,
+			solve_moves_budget: 100_000,
+			solve_states_budget: 100_000,
 		}
 	}
 }
@@ -438,10 +454,18 @@ where
 	pub fn is_win(&self) -> bool {
 		self.state.is_win()
 	}
-	pub fn is_winnable(&self) -> Option<Vec<StateSnapshot<G>>> {
+	pub fn solve(&self) -> Result<Option<Vec<StateSnapshot<G>>>, SolveError> {
 		let mut state_moves = std::collections::HashMap::new();
 		let mut state = self.clone();
+		let mut moves = 0;
 		while !state.is_win() {
+			moves += 1;
+			if self.config.solve_moves_budget < moves {
+				return Err(SolveError::MovesBudgetExceeded);
+			}
+			if self.config.solve_states_budget < state_moves.len() as u64 {
+				return Err(SolveError::StatesBudgetExceeded);
+			}
 			// Continue existing iterator if it exists
 			let it = state_moves
 				.entry(state.state().state().clone())
@@ -460,12 +484,12 @@ where
 
 			// No more moves. If we can't undo we're done
 			if state.history().is_empty() {
-				return None;
+				return Ok(None);
 			} else {
 				state.undo();
 			}
 		}
-		Some(state.state.history)
+		Ok(Some(state.state.history))
 	}
 }
 impl<G: Game<Score = i32>> Game for SessionState<G>

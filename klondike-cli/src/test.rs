@@ -3,8 +3,8 @@ use klondike::Klondike;
 #[test]
 fn test_is_winnable() {
 	// is winnable
-	let is_winnable = Session::new_default(Klondike::with_seed(124)).is_winnable();
-	if let Some(win_moves) = is_winnable {
+	let solution_result = Session::new_default(Klondike::with_seed(124)).solve();
+	if let Ok(Some(win_moves)) = solution_result {
 		// for (i, ins) in win_moves.into_iter().enumerate() {
 		// 	println!("{i} = {:?}", ins.instruction());
 		// }
