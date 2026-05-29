@@ -324,6 +324,47 @@ impl std::fmt::Display for SolveError {
 }
 impl std::error::Error for SolveError {}
 
+/// The solution tends to be very large with long chains of moves that go back to the same state.
+/// It is recommended to call .clean_solution() if the solution is actually going to be shown to a user.
+pub struct Solution<G: Game> {
+	solution: Vec<StateSnapshot<G>>,
+}
+impl<G: Game + Eq + core::hash::Hash> Solution<G> {
+	pub const fn raw_solution(&self) -> &[StateSnapshot<G>] {
+		self.solution.as_slice()
+	}
+	/// Repeatedly remove the largest range of moves that goes back into the same state.
+	/// This is a very expensive operation when the solution is very long!
+	pub fn clean_solution(self) -> Vec<StateSnapshot<G>> {
+		let mut history = self.solution;
+		// history includes cycles
+		let mut state_index: std::collections::HashMap<_, _> = history
+			.iter()
+			.enumerate()
+			.map(|(i, snapshot)| (snapshot.state().clone(), i))
+			.collect();
+
+		// find the longest range where the start and end are the same state
+		while let Some(longest_range) = history
+			.iter()
+			.enumerate()
+			.filter_map(|(index, snapshot)| {
+				let &last_index = state_index.get(snapshot.state())?;
+				let longness = last_index - index;
+				(longness != 0).then_some(index..last_index)
+			})
+			.max_by_key(|range| range.len())
+		{
+			history.drain(longest_range);
+			for (i, snapshot) in history.iter().enumerate() {
+				state_index.insert(snapshot.state().clone(), i);
+			}
+		}
+
+		history
+	}
+}
+
 #[derive(Clone, Debug)]
 pub enum SessionInstruction<I> {
 	Undo,
@@ -454,7 +495,8 @@ where
 	pub fn is_win(&self) -> bool {
 		self.state.is_win()
 	}
-	pub fn solve(&self) -> Result<Option<Vec<StateSnapshot<G>>>, SolveError> {
+	/// Attempt to produce a solution.
+	pub fn solve(&self) -> Result<Option<Solution<G>>, SolveError> {
 		let mut state_moves = std::collections::HashMap::new();
 		let mut state = self.clone();
 		let mut moves = 0;
@@ -489,7 +531,9 @@ where
 				state.undo();
 			}
 		}
-		Ok(Some(state.state.history))
+		Ok(Some(Solution {
+			solution: state.state.history,
+		}))
 	}
 }
 impl<G: Game<Score = i32>> Game for SessionState<G>
