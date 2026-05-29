@@ -540,7 +540,7 @@ impl<G: Game<Score = i32>> Game for SessionState<G>
 where
 	G::Stats: Default,
 {
-	type Score = i32;
+	type Score = G::Score;
 	type Stats = SessionStats<G::Stats>;
 	type Config = SessionConfig<G::Config>;
 	type Instruction = SessionInstruction<G::Instruction>;
