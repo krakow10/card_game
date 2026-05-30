@@ -117,7 +117,7 @@ impl Display for DisplayStats<'_> {
 			self.0.stats().stats().recycle_count(),
 			self.0.stats().stats().moves(),
 			self.0.stats().undos(),
-			self.0.state().score(self.0.stats(), &self.0.config()),
+			self.0.state().score(self.0.stats(), self.0.config()),
 		)
 	}
 }
@@ -239,7 +239,7 @@ fn main() -> Result<(), std::io::Error> {
 	use rand::RngExt;
 	let mut rng = rand::rng();
 	// seed from cli argument
-	let mut seed = if let Some(seed) = std::env::args().skip(1).next() {
+	let mut seed = if let Some(seed) = std::env::args().nth(1) {
 		seed.parse().expect("Invalid u64 seed")
 	} else {
 		rng.random()
