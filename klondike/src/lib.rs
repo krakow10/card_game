@@ -776,7 +776,7 @@ impl Game for Klondike {
 				match src {
 					KlondikePileStack::Stock => stats.increment_move_to_tableau(),
 					KlondikePileStack::Foundation(_) => stats.increment_move_from_foundation(),
-					_ => {}
+					KlondikePileStack::Tableau(_) => {}
 				}
 				let (cards, did_flip_up) = self.state.take_stack_flip_up(src);
 				if did_flip_up {
