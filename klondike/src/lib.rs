@@ -631,7 +631,9 @@ impl Klondike {
 		let mut deck = deck.into_iter();
 
 		// generate tableaus
-		fn pile<const DN: usize>(deck: &mut <Stack<52> as IntoIterator>::IntoIter) -> Pile<DN, NUM_RANKS> {
+		fn pile<const DN: usize>(
+			deck: &mut <Stack<52> as IntoIterator>::IntoIter,
+		) -> Pile<DN, NUM_RANKS> {
 			let stack = Stack::from_iter(deck.take(DN));
 			let mut pile = Pile::new_face_down(stack);
 			pile.push(deck.next().unwrap());
