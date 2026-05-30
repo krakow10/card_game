@@ -317,12 +317,12 @@ pub enum SolveError {
 	MovesBudgetExceeded,
 	StatesBudgetExceeded,
 }
-impl std::fmt::Display for SolveError {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for SolveError {
+	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 		write!(f, "{self:?}")
 	}
 }
-impl std::error::Error for SolveError {}
+impl core::error::Error for SolveError {}
 
 /// The solution tends to be very large with long chains of moves that go back to the same state.
 /// It is recommended to call .clean_solution() if the solution is actually going to be shown to a user.
