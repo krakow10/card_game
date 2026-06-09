@@ -10,6 +10,12 @@ keywords = ["card", "cards", "solitaire", "klondike"]
 
 [dependencies]
 arrayvec = { version = "0.7.6", registry = "Quaternions", features = ["len_u8"], default-features = false }
+serde = { version = "1.0.228", default-features = false, optional = true }
+serde_derive = { version = "1.0.228", default-features = false, optional = true }
 
 [lints]
 workspace = true
+
+[features]
+default = ["serde"]
+serde = ["dep:serde", "dep:serde_derive"]

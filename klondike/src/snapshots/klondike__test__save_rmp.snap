@@ -1,0 +1,6 @@
+---
+source: klondike/src/test.rs
+expression: serialized
+extension: bin
+snapshot_kind: binary
+---

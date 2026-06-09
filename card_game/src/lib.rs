@@ -146,6 +146,11 @@ impl Rank {
 /// 2 bits for suit ID
 /// 4 bits for card Value
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[cfg_attr(
+	feature = "serde",
+	derive(serde_derive::Deserialize, serde_derive::Serialize),
+	serde(transparent)
+)]
 pub struct Card(core::num::NonZeroU8);
 impl Card {
 	pub const fn new(deck: Deck, suit: Suit, rank: Rank) -> Self {
@@ -230,8 +235,54 @@ impl<const CAP: usize> IntoIterator for Stack<CAP> {
 	}
 }
 
+#[cfg(feature = "serde")]
+impl<'de, const CAP: usize> serde::Deserialize<'de> for Stack<CAP> {
+	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+	where
+		D: serde::Deserializer<'de>,
+	{
+		struct StackVisitor<const CAP: usize>;
+		impl<'de, const CAP: usize> serde::de::Visitor<'de> for StackVisitor<CAP> {
+			type Value = Stack<CAP>;
+			fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+				write!(f, "Card Stack")
+			}
+			fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+			where
+				A: serde::de::SeqAccess<'de>,
+			{
+				use serde::de::Error;
+				let mut stack = Stack::new();
+				while let Some(card) = seq.next_element()? {
+					stack.try_push(card).map_err(A::Error::custom)?;
+				}
+				Ok(stack)
+			}
+		}
+		deserializer.deserialize_seq(StackVisitor)
+	}
+}
+#[cfg(feature = "serde")]
+impl<const CAP: usize> serde::Serialize for Stack<CAP> {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: serde::Serializer,
+	{
+		use serde::ser::SerializeSeq;
+		let mut seq = serializer.serialize_seq(Some(self.len()))?;
+		for card in self.as_slice() {
+			seq.serialize_element(card)?;
+		}
+		seq.end()
+	}
+}
+
 /// A pile is a stack of face down cards and a stack of face up cards.
 #[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
+#[cfg_attr(
+	feature = "serde",
+	derive(serde_derive::Deserialize, serde_derive::Serialize)
+)]
 pub struct Pile<const DN: usize, const UP: usize> {
 	face_down: Stack<DN>,
 	face_up: Stack<UP>,
@@ -372,6 +423,10 @@ pub enum SessionInstruction<I> {
 }
 
 #[derive(Clone, Debug, Default)]
+#[cfg_attr(
+	feature = "serde",
+	derive(serde_derive::Deserialize, serde_derive::Serialize)
+)]
 pub struct SessionStats<S> {
 	inner: S,
 	undos: u32,
@@ -388,6 +443,10 @@ impl<S> SessionStats<S> {
 	}
 }
 #[derive(Clone, Debug)]
+#[cfg_attr(
+	feature = "serde",
+	derive(serde_derive::Deserialize, serde_derive::Serialize)
+)]
 pub struct SessionConfig<C> {
 	pub inner: C,
 	pub undo_penalty: i32,
@@ -417,6 +476,10 @@ pub struct Session<G: Game> {
 	state: SessionState<G>,
 }
 #[derive(Clone, Debug)]
+#[cfg_attr(
+	feature = "serde",
+	derive(serde_derive::Deserialize, serde_derive::Serialize)
+)]
 pub struct StateSnapshot<G: Game> {
 	state: G,
 	instruction: G::Instruction,
@@ -588,5 +651,97 @@ where
 	}
 	fn is_win(&self) -> bool {
 		self.state.is_win()
+	}
+}
+
+#[cfg(feature = "serde")]
+impl<'de, G: Game<Score = i32>> serde::de::Deserialize<'de> for Session<G>
+where
+	G: serde::Deserialize<'de> + Clone + Eq + core::hash::Hash,
+	G::Stats: Default,
+	G::Instruction: serde::Deserialize<'de> + Eq + core::hash::Hash,
+	SessionConfig<G::Config>: serde::Deserialize<'de>,
+	Vec<G::Instruction>: serde::Deserialize<'de>,
+{
+	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+	where
+		D: serde::Deserializer<'de>,
+	{
+		#[derive(serde_derive::Deserialize)]
+		#[serde(bound(deserialize = "
+			G: serde::Deserialize<'de>,
+			SessionConfig<G::Config>: serde::Deserialize<'de>,
+			Vec<G::Instruction>: serde::Deserialize<'de>,
+		"))]
+		struct SerializedSession<G: Game> {
+			config: SessionConfig<G::Config>,
+			initial_state: G,
+			instructions: Vec<G::Instruction>,
+		}
+		let serialized = SerializedSession::deserialize(deserializer)?;
+		let mut session = Session::new(serialized.initial_state, serialized.config);
+		for instruction in serialized.instructions {
+			session.process_instruction(instruction);
+		}
+		Ok(session)
+	}
+}
+#[cfg(feature = "serde")]
+impl<G: Game> serde::Serialize for Session<G>
+where
+	G: serde::Serialize,
+	G::Config: serde::Serialize,
+	G::Instruction: serde::Serialize,
+{
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: serde::Serializer,
+	{
+		struct History<'a, G: Game>(&'a [StateSnapshot<G>]);
+		impl<G: Game> serde::Serialize for History<'_, G>
+		where
+			G: serde::Serialize,
+			G::Instruction: serde::Serialize,
+		{
+			fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+			where
+				S: serde::Serializer,
+			{
+				let &History(history) = self;
+				use serde::ser::SerializeSeq;
+				let mut seq = serializer.serialize_seq(Some(history.len()))?;
+				for snapshot in history {
+					seq.serialize_element(&snapshot.instruction)?;
+				}
+				seq.end()
+			}
+		}
+
+		#[derive(serde_derive::Serialize)]
+		#[serde(bound(serialize = "
+			G: serde::Serialize,
+			SessionConfig<G::Config>: serde::Serialize,
+			G::Instruction: serde::Serialize,
+		"))]
+		struct SerializedSession<'a, G: Game> {
+			config: &'a SessionConfig<G::Config>,
+			initial_state: &'a G,
+			instructions: History<'a, G>,
+		}
+
+		// serialize the initial state of the game.
+		// if there is history, it is the first snapshot's state,
+		// otherwise it is the current game state since there are no moves.
+		let initial_state = if let Some(snapshot) = self.state.history.first() {
+			snapshot.state()
+		} else {
+			&self.state.state
+		};
+		let session = SerializedSession {
+			config: &self.config,
+			initial_state,
+			instructions: History(&self.state.history),
+		};
+		session.serialize(serializer)
 	}
 }

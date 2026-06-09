@@ -2,11 +2,18 @@ pub type Rng = rand::rngs::StdRng;
 
 use card_game::{Card, Game, Pile, Rank, Stack};
 
+#[cfg(test)]
+mod test;
+
 // test readme
 #[doc = include_str!("../README.md")]
 #[cfg(doctest)]
 struct ReadmeDoctests;
 
+#[cfg_attr(
+	feature = "serde",
+	derive(serde_derive::Deserialize, serde_derive::Serialize)
+)]
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub enum DrawStockConfig {
 	#[default]
@@ -14,6 +21,10 @@ pub enum DrawStockConfig {
 	DrawThree = 3,
 }
 
+#[cfg_attr(
+	feature = "serde",
+	derive(serde_derive::Deserialize, serde_derive::Serialize)
+)]
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub enum MoveFromFoundationConfig {
 	#[default]
@@ -21,6 +32,10 @@ pub enum MoveFromFoundationConfig {
 	Disallowed,
 }
 
+#[cfg_attr(
+	feature = "serde",
+	derive(serde_derive::Deserialize, serde_derive::Serialize)
+)]
 #[derive(Clone, Copy, Debug)]
 pub struct ScoringConfig {
 	pub move_to_foundation: i32,
@@ -44,6 +59,10 @@ impl Default for ScoringConfig {
 	}
 }
 
+#[cfg_attr(
+	feature = "serde",
+	derive(serde_derive::Deserialize, serde_derive::Serialize)
+)]
 #[derive(Clone, Debug, Default)]
 pub struct KlondikeConfig {
 	pub draw_stock: DrawStockConfig,
@@ -379,6 +398,10 @@ const fn sum(n: usize) -> usize {
 const STOCK: usize = 52 - sum(TABLEAUS);
 const NUM_RANKS: usize = Rank::RANKS.len();
 
+#[cfg_attr(
+	feature = "serde",
+	derive(serde_derive::Deserialize, serde_derive::Serialize)
+)]
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct KlondikeState {
 	stock: Pile<STOCK, STOCK>,
@@ -613,6 +636,11 @@ fn test_klondike_iter() {
 	assert_eq!(KlondikeIter::new().count(), 721);
 }
 
+#[cfg_attr(
+	feature = "serde",
+	derive(serde_derive::Deserialize, serde_derive::Serialize),
+	serde(transparent)
+)]
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Klondike {
 	state: KlondikeState,
@@ -795,5 +823,30 @@ impl Game for Klondike {
 					.zip(Rank::RANKS)
 					.all(|(card, rank)| card.rank() == rank)
 		})
+	}
+}
+
+#[cfg(feature = "serde")]
+impl serde::Serialize for KlondikeInstruction {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: serde::Serializer,
+	{
+		// There is 721 klondike instructions
+		let instruction_id = KlondikeIter::new()
+			.position(|instruction| &instruction == self)
+			.unwrap();
+		serializer.serialize_u16(instruction_id as u16)
+	}
+}
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for KlondikeInstruction {
+	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+	where
+		D: serde::Deserializer<'de>,
+	{
+		let instruction_id = u16::deserialize(deserializer)?;
+		let instruction = KlondikeIter::new().nth(instruction_id as usize).unwrap();
+		Ok(instruction)
 	}
 }
