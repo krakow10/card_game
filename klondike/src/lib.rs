@@ -174,6 +174,11 @@ impl TableauIter {
 		}
 	}
 }
+impl Default for TableauIter {
+	fn default() -> Self {
+		Self::new()
+	}
+}
 impl Iterator for TableauIter {
 	type Item = Tableau;
 	fn next(&mut self) -> Option<Self::Item> {
@@ -219,6 +224,11 @@ impl FoundationIter {
 		Self {
 			foundation: Some(Foundation::ITER_BEGIN),
 		}
+	}
+}
+impl Default for FoundationIter {
+	fn default() -> Self {
+		Self::new()
 	}
 }
 impl Iterator for FoundationIter {
