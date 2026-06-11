@@ -164,6 +164,33 @@ impl Tableau {
 		})
 	}
 }
+pub struct TableauIter {
+	tableau: Option<Tableau>,
+}
+impl TableauIter {
+	pub const fn new() -> Self {
+		Self {
+			tableau: Some(Tableau::ITER_BEGIN),
+		}
+	}
+}
+impl Iterator for TableauIter {
+	type Item = Tableau;
+	fn next(&mut self) -> Option<Self::Item> {
+		let tableau = self.tableau?;
+		self.tableau = tableau.next();
+		Some(tableau)
+	}
+}
+impl IntoIterator for Tableau {
+	type Item = Self;
+	type IntoIter = TableauIter;
+	fn into_iter(self) -> Self::IntoIter {
+		TableauIter {
+			tableau: Some(self),
+		}
+	}
+}
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Foundation {
@@ -182,6 +209,33 @@ impl Foundation {
 			Foundation3 => Foundation4,
 			Foundation4 => return None,
 		})
+	}
+}
+pub struct FoundationIter {
+	foundation: Option<Foundation>,
+}
+impl FoundationIter {
+	pub const fn new() -> Self {
+		Self {
+			foundation: Some(Foundation::ITER_BEGIN),
+		}
+	}
+}
+impl Iterator for FoundationIter {
+	type Item = Foundation;
+	fn next(&mut self) -> Option<Self::Item> {
+		let foundation = self.foundation?;
+		self.foundation = foundation.next();
+		Some(foundation)
+	}
+}
+impl IntoIterator for Foundation {
+	type Item = Self;
+	type IntoIter = FoundationIter;
+	fn into_iter(self) -> Self::IntoIter {
+		FoundationIter {
+			foundation: Some(self),
+		}
 	}
 }
 
